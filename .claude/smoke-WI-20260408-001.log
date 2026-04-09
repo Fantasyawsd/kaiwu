@@ -1,0 +1,147 @@
+current algorithm_name is ppo
+2026-04-08 01:40:20.680 | INFO | PID:4209 | learner.register_monitor:151 - learner learner_init Start loading framework default monitor file kaiwudrl/conf/kaiwudrl/monitor.yaml
+2026-04-08 01:40:20.681 | INFO | PID:4209 | monitor_config_builder.load_monitor_config_from_yaml:667 - learner learner_init Loading monitor file
+2026-04-08 01:40:20.685 | INFO | PID:4209 | monitor_config_builder.load_monitor_config_from_yaml:673 - learner learner_init YAML file read successfully, starting validation and configuration build...
+2026-04-08 01:40:20.686 | INFO | PID:4209 | monitor_config_builder.load_monitor_config_from_yaml:680 - learner learner_init Config build validation successful!
+2026-04-08 01:40:20.686 | INFO | PID:4209 | monitor_config_builder.merge:487 - learner Config merge completed
+2026-04-08 01:40:20.687 | INFO | PID:4209 | learner.register_monitor:157 - learner learner_init Framework default monitor config merged successfully (lowest priority)
+2026-04-08 01:40:20.687 | INFO | PID:4209 | learner.register_monitor:164 - learner learner_init Start loading project default monitor file
+2026-04-08 01:40:20.687 | INFO | PID:4209 | monitor_config_builder.load_monitor_config_from_yaml:667 - learner learner_init Loading monitor file
+2026-04-08 01:40:20.691 | INFO | PID:4209 | monitor_config_builder.load_monitor_config_from_yaml:673 - learner learner_init YAML file read successfully, starting validation and configuration build...
+2026-04-08 01:40:20.692 | INFO | PID:4209 | monitor_config_builder.load_monitor_config_from_yaml:680 - learner learner_init Config build validation successful!
+2026-04-08 01:40:20.692 | INFO | PID:4209 | monitor_config_builder.merge:487 - learner Config merge completed
+2026-04-08 01:40:20.692 | INFO | PID:4209 | learner.register_monitor:170 - learner learner_init Project default monitor config merged successfully (medium priority, overrides framework default)
+2026-04-08 01:40:20.693 | INFO | PID:4209 | learner.register_monitor:182 - learner learner_init Start loading user custom monitor file: agent_ppo/conf/monitor_builder.py
+2026-04-08 01:40:20.694 | INFO | PID:4209 | monitor_config_builder.load_user_monitor_config:866 - learner learner_init User config directory added to Python path: /data/projects/gorge_chase/agent_ppo/conf
+2026-04-08 01:40:20.703 | INFO | PID:4209 | monitor_config_builder.load_user_monitor_config:901 - learner learner_init Modified expr for metric [reward]: avg(kaiwu_reward{})
+2026-04-08 01:40:20.704 | INFO | PID:4209 | monitor_config_builder.load_user_monitor_config:901 - learner learner_init Modified expr for metric [total_loss]: avg(kaiwu_total_loss{})
+2026-04-08 01:40:20.704 | INFO | PID:4209 | monitor_config_builder.load_user_monitor_config:901 - learner learner_init Modified expr for metric [value_loss]: avg(kaiwu_value_loss{})
+2026-04-08 01:40:20.704 | INFO | PID:4209 | monitor_config_builder.load_user_monitor_config:901 - learner learner_init Modified expr for metric [policy_loss]: avg(kaiwu_policy_loss{})
+2026-04-08 01:40:20.704 | INFO | PID:4209 | monitor_config_builder.load_user_monitor_config:901 - learner learner_init Modified expr for metric [entropy_loss]: avg(kaiwu_entropy_loss{})
+2026-04-08 01:40:20.705 | INFO | PID:4209 | monitor_config_builder.load_user_monitor_config:907 - learner learner_init User custom monitor config loaded successfully (kaiwu_ prefix added): /data/projects/gorge_chase/agent_ppo/conf/monitor_builder.py
+2026-04-08 01:40:20.705 | INFO | PID:4209 | monitor_config_builder.merge:487 - learner Config merge completed
+2026-04-08 01:40:20.705 | INFO | PID:4209 | learner.register_monitor:188 - learner learner_init User custom monitor config merged successfully (highest priority, overrides all default configs)
+2026-04-08 01:40:20.706 | INFO | PID:4209 | learner.register_monitor:199 - learner learner_init Start building final monitor config...
+2026-04-08 01:40:20.706 | INFO | PID:4209 | learner.register_monitor:207 - learner learner_init Output directory /workspace/train/ ready (created automatically if not exists)
+2026-04-08 01:40:20.713 | INFO | PID:4209 | monitor_config_builder.dump_to_yaml_file:572 - learner Config successfully written to file: /workspace/train/monitor.yaml
+2026-04-08 01:40:20.719 | INFO | PID:4209 | monitor_config_builder.dump_to_yaml_file:572 - learner Config successfully written to file: /workspace/train/monitor.yaml.done
+2026-04-08 01:40:20.719 | INFO | PID:4209 | learner.register_monitor:215 - learner learner_init === Monitor config registration completed ===
+2026-04-08 01:40:20.719 | INFO | PID:4209 | learner.register_monitor:216 - learner learner_init Final config file generated: /workspace/train/monitor.yaml
+2026-04-08 01:40:21.099632: I tensorflow/core/util/port.cc:110] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-04-08 01:40:21.156751: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2026-04-08 01:40:21.576416: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2026-04-08 01:40:21.578225: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-04-08 01:40:22.679004: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-04-08 01:40:23.815 | INFO | PID:4209 | process_health_monitor.register_alert_callback:319 - learner learner_init ProcessHealthMonitor registered alert callback for types: ALL
+2026-04-08 01:40:23.826 | INFO | PID:4209 | process_health_monitor.register_process:192 - learner learner_init ProcessHealthMonitor registered process: trainer(pid=4227, type=trainer)
+2026-04-08 01:40:23.828 | INFO | PID:4209 | learner.train_loop:353 - learner_init process health monitor started
+2026-04-08 01:40:23.839 | INFO | PID:4227 | trainer.before_run:290 - learner train process start at pid is 4227
+2026-04-08 01:40:23.876 | INFO | PID:4227 | worker.worker_start_up:178 - learner train using shared MonitorProxy (PID: 4233) not_server
+2026-04-08 01:40:23.880 | INFO | PID:4227 | replay_buffer_wrapper.init:122 - learner train replay_buff, use reverb
+[reverb/cc/platform/tfrecord_checkpointer.cc:162]  Initializing TFRecordCheckpointer in /tmp/tmpjh00b_r3.
+[reverb/cc/platform/tfrecord_checkpointer.cc:567] Loading latest checkpoint from /tmp/tmpjh00b_r3
+MonitorProxy before_run: No config provided, config_section=None, config_file_path=None
+2026-04-08 01:40:23.891 | INFO | PID:4233 | monitor_proxy_process.before_run:100 - learner monitor_proxy started at PID 4233, serving as cross-process shared singleton. All Workers will use this single monitor_proxy process.
+2026-04-08 01:40:23.893 | INFO | PID:4233 | prometheus_utils._initial_cleanup:673 - learner monitor_proxy Initial cleanup started with batch_size=1000, original_batch_size=10
+2026-04-08 01:40:23.902 | INFO | PID:4233 | prometheus_utils._auto_delete_expired_jobs:442 - learner monitor_proxy No expired jobs found
+2026-04-08 01:40:23.903 | INFO | PID:4233 | prometheus_utils._initial_cleanup:681 - learner monitor_proxy Initial cleanup completed, restored batch_size to 10
+2026-04-08 01:40:23.903 | INFO | PID:4233 | monitor_proxy_process.before_run:141 - learner monitor_proxy process start success at pid is 4233
+[reverb/cc/platform/default/server.cc:71] Started replay server on port 9999
+2026-04-08 01:40:24.087 | INFO | PID:4227 | agent_wrapper_common.create_standard_agent_wrapper:103 - learner policy_name train_one, algo ppo, agent_wrapper is StandardModelWrapperPytorch
+2026-04-08 01:40:24.105 | INFO | PID:4227 | trainer.before_run:383 - learner train zmq server on learner bind at 0.0.0.0:9997 for aisrv
+2026-04-08 01:40:24.111 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-0.pkl successfully
+2026-04-08 01:40:24.153 | INFO | PID:4227 | model_file_sync.push_checkpoint_to_model_pool:632 - model_file_sync push output_file_name /data/ckpt/gorge_chase_ppo/kaiwu_checkpoint_gorge_chase_ppo_0.tar.gz key model.ckpt_gorge_chase_ppo_0 to modelpool success,             total push to modelpool succ cnt is 1             total push to modelpool err cnt is 0
+2026-04-08 01:40:24.154 | INFO | PID:4227 | off_policy_strategy.before_run:46 - learner train first model file push to modelpool success
+2026-04-08 01:40:24.154 | INFO | PID:4227 | off_policy_strategy.before_run:50 - learner OffPolicyStrategy before_run
+2026-04-08 01:40:24.154 | INFO | PID:4227 | trainer.before_run:440 - learner train process start success at 4227, on-policy/off-policy is off_policy, trainer global step -1.0, app gorge_chase algo ppo, train_batch_size is 2
+learner is alive
+2026-04-08 01:40:30.106 | INFO | PID:4313 | worker.worker_start_up:178 - aisrv ai_server using shared MonitorProxy (PID: None) not_server
+2026-04-08 01:40:30.108 | INFO | PID:4313 | process_health_monitor.register_alert_callback:319 - aisrv ai_server ProcessHealthMonitor registered alert callback for types: ALL
+2026-04-08 01:40:30.148 | INFO | PID:4313 | process_health_monitor.register_process:192 - aisrv ai_server ProcessHealthMonitor registered process: learner_proxy_train_one_0(pid=4338, type=learner_proxy)
+2026-04-08 01:40:30.150 | INFO | PID:4313 | aisrv_server_standard.start_aisrv_handler:513 - aisrv ai_server get kaiwu_env address is ['172.18.0.3:5566']
+2026-04-08 01:40:30.158 | INFO | PID:4313 | aisrv_server_standard.start_aisrv_handler:526 - aisrv ai_server AiSrvHandle with address: 172.18.0.3:5566 start
+2026-04-08 01:40:30.160 | INFO | PID:4313 | process_health_monitor.register_process:192 - aisrv ai_server ProcessHealthMonitor registered process: workflow_0(pid=4341, type=workflow)
+2026-04-08 01:40:30.160 | INFO | PID:4335 | worker.worker_start_up:178 - aisrv model_file_sync using shared MonitorProxy (PID: None) not_server
+2026-04-08 01:40:30.161 | INFO | PID:4313 | aisrv_server_standard.before_run:660 - aisrv ai_server is start success at 0.0.0.0:8000, pid is 4313, run_mode is train, self_play is False
+2026-04-08 01:40:30.161 | INFO | PID:4335 | model_file_sync.before_run:231 - aisrv model_file_sync, use modelpool, use_which_deep_learning_framework is pytorch
+2026-04-08 01:40:30.162 | INFO | PID:4335 | model_file_sync.before_run:237 - model_file_sync process pid is 4335
+2026-04-08 01:40:30.163 | INFO | PID:4335 | model_file_sync.make_model_dirs:167 - model_file_sync mkdir /data/ckpt/gorge_chase_ppo/plugins success
+2026-04-08 01:40:30.163 | INFO | PID:4335 | model_file_sync.make_model_dirs:184 - model_file_sync mkdir /data/ckpt/gorge_chase_ppo/models /data/ckpt/gorge_chase_ppo/models_new/ /data/ckpt/gorge_chase_ppo/plugins success
+2026-04-08 01:40:30.164 | INFO | PID:4335 | model_file_sync.make_model_dirs:193 - model_file_sync mkdir /data/ckpt/gorge_chase_ppo/convert_models_aisrv success
+2026-04-08 01:40:30.167 | INFO | PID:4338 | worker.worker_start_up:178 - aisrv learner_proxy using shared MonitorProxy (PID: None) not_server
+2026-04-08 01:40:30.177 | INFO | PID:4341 | worker.worker_start_up:178 - aisrv ai_server_handle using shared MonitorProxy (PID: None) not_server
+2026-04-08 01:40:30.187 | INFO | PID:4341 | kaiwu_rl_helper_standard.__init__:169 - aisrv kaiwu_rl_helper start at pid 4341, ppid is 137773168711488, thread id is -1
+2026-04-08 01:40:30.187 | INFO | PID:4341 | kaiwu_rl_helper_standard.__init__:169 - aisrv kaiwu_rl_helper start at pid 4341, ppid is 137773168711488, thread id is -1
+2026-04-08 01:40:30.188 | INFO | PID:4341 | aisrv_handle_standard.before_run:224 - aisrv ai_server_handle use kaiwu_rl_helper: <KaiWuRLStandardHelper(kaiwu_rl_helper_0, initial daemon)>
+2026-04-08 01:40:30.188 | INFO | PID:4341 | aisrv_handle_standard.before_run:224 - aisrv ai_server_handle use kaiwu_rl_helper: <KaiWuRLStandardHelper(kaiwu_rl_helper_0, initial daemon)>
+2026-04-08 01:40:30.189 | INFO | PID:4341 | aisrv_handle_standard.before_run:227 - aisrv ai_server_handle established connect to 172.18.0.3:5566, slot id is 0, min_slot_id is 0
+2026-04-08 01:40:30.189 | INFO | PID:4341 | aisrv_handle_standard.before_run:227 - aisrv ai_server_handle established connect to 172.18.0.3:5566, slot id is 0, min_slot_id is 0
+2026-04-08 01:40:30.190 | INFO | PID:4341 | aisrv_handle_standard.before_run:236 - aisrv ai_server_handle current_actor_addrs is [], current_learner_addrs is ['127.0.0.1:9999']
+2026-04-08 01:40:30.190 | INFO | PID:4341 | aisrv_handle_standard.before_run:236 - aisrv ai_server_handle current_actor_addrs is [], current_learner_addrs is ['127.0.0.1:9999']
+2026-04-08 01:40:30.191 | INFO | PID:4341 | aisrv_handle_standard.before_run:259 - aisrv ai_server_handle start success at pid 4341
+2026-04-08 01:40:30.191 | INFO | PID:4341 | aisrv_handle_standard.before_run:259 - aisrv ai_server_handle start success at pid 4341
+2026-04-08 01:40:30.198 | INFO | PID:4341 | process_health_monitor.register_thread:259 - aisrv ai_server ProcessHealthMonitor registered thread: kaiwu_rl_helper_0(tid=137772538992320, type=kaiwu_rl_helper)
+2026-04-08 01:40:30.198 | INFO | PID:4341 | process_health_monitor.register_thread:259 - aisrv ai_server ProcessHealthMonitor registered thread: kaiwu_rl_helper_0(tid=137772538992320, type=kaiwu_rl_helper)
+2026-04-08 01:40:30.204 | INFO | PID:4341 | kaiwu_env_proxy.init:94 - aisrv kaiwu_env_proxy use zmq, connect to 172.18.0.3, port is 5566, client_id is 92515182
+2026-04-08 01:40:30.204 | INFO | PID:4341 | kaiwu_env_proxy.init:94 - aisrv kaiwu_env_proxy use zmq, connect to 172.18.0.3, port is 5566, client_id is 92515182
+2026-04-08 01:40:30.308215: I tensorflow/core/util/port.cc:110] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-04-08 01:40:30.310632: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2026-04-08 01:40:30.336 | INFO | PID:4341 | agent_wrapper_common.create_standard_agent_wrapper:103 - aisrv policy_name train_one, algo ppo, agent_wrapper is StandardModelWrapperPytorch
+2026-04-08 01:40:30.336 | INFO | PID:4341 | agent_wrapper_common.create_standard_agent_wrapper:103 - aisrv policy_name train_one, algo ppo, agent_wrapper is StandardModelWrapperPytorch
+2026-04-08 01:40:30.337 | INFO | PID:4341 | kaiwu_rl_helper_standard.start_agent:1225 - aisrv kaiwu_rl_helper start agent 0 with train_one
+2026-04-08 01:40:30.337 | INFO | PID:4341 | kaiwu_rl_helper_standard.start_agent:1225 - aisrv kaiwu_rl_helper start agent 0 with train_one
+2026-04-08 01:40:30.362822: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2026-04-08 01:40:30.363709: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-04-08 01:40:30.374 | INFO | PID:4341 | train_workflow.run_episodes:76 - aisrv training_metrics is {'basic': {'train_global_step': 0, 'episode_cnt': 0, 'sample_receive_cnt': 0, 'predict_succ_cnt': 0, 'load_model_succ_cnt': 0}, 'algorithm': {'reward': 0.01, 'total_loss': 21.77, 'value_loss': 16.14, 'policy_loss': 5.64, 'entropy_loss': 2.06}}
+2026-04-08 01:40:30.374 | INFO | PID:4341 | train_workflow.run_episodes:76 - aisrv training_metrics is {'basic': {'train_global_step': 0, 'episode_cnt': 0, 'sample_receive_cnt': 0, 'predict_succ_cnt': 0, 'load_model_succ_cnt': 0}, 'algorithm': {'reward': 0.01, 'total_loss': 21.77, 'value_loss': 16.14, 'policy_loss': 5.64, 'entropy_loss': 2.06}}
+2026-04-08 01:40:30.438 | INFO | PID:4341 | model_file_sync.get_current_available_model_file:273 - aisrv model_file_sync current_available_model_files is empty
+2026-04-08 01:40:30.438 | INFO | PID:4341 | model_file_sync.get_current_available_model_file:273 - aisrv model_file_sync current_available_model_files is empty
+2026-04-08 01:40:30.443 | INFO | PID:4341 | train_workflow.run_episodes:98 - aisrv Episode 1 start
+2026-04-08 01:40:30.443 | INFO | PID:4341 | train_workflow.run_episodes:98 - aisrv Episode 1 start
+2026-04-08 01:40:30.482 | INFO | PID:4341 | train_workflow.run_episodes:137 - aisrv [GAMEOVER] episode:1 steps:11 result:FAIL sim_score:16.5 total_reward:0.105
+2026-04-08 01:40:30.482 | INFO | PID:4341 | train_workflow.run_episodes:137 - aisrv [GAMEOVER] episode:1 steps:11 result:FAIL sim_score:16.5 total_reward:0.105
+2026-04-08 01:40:30.589 | INFO | PID:4341 | model_file_sync.get_current_available_model_file:273 - aisrv model_file_sync current_available_model_files is empty
+2026-04-08 01:40:30.589 | INFO | PID:4341 | model_file_sync.get_current_available_model_file:273 - aisrv model_file_sync current_available_model_files is empty
+2026-04-08 01:40:30.591 | INFO | PID:4341 | train_workflow.run_episodes:98 - aisrv Episode 2 start
+2026-04-08 01:40:30.591 | INFO | PID:4341 | train_workflow.run_episodes:98 - aisrv Episode 2 start
+2026-04-08 01:40:31.335756: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-04-08 01:40:31.991 | INFO | PID:4338 | reverb_util.__init__:52 - aisrv learner_proxy reverb client Client, server_address=127.0.0.1:9999 127.0.0.1:9999 connect to reverb server
+2026-04-08 01:40:31.992 | INFO | PID:4338 | learner_proxy.before_run:435 - learner_proxy reverb server is 127.0.0.1:9999, table_names is ['reverb_replay_buffer_table_0']
+2026-04-08 01:40:31.993 | INFO | PID:4338 | learner_proxy.before_run:491 - learner_proxy zmq client connect at 127.0.0.1:9997 with client_id 512622
+2026-04-08 01:40:31.994 | INFO | PID:4338 | learner_proxy.before_run:506 - learner_proxy policy_name: train_one, start success at pid 4338
+2026-04-08 01:40:31.999 | INFO | PID:4227 | reverb_dataset_v1.start_background_filler:58 - learner start_background_filler success, reverb.Client connect at localhost:9999
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+2026-04-08 01:40:32.063 | INFO | PID:4227 | algorithm.learn:90 - learner [train] total_loss:36.6668 policy_loss:7.5411 value_loss:29.1278 entropy:2.0638
+2026-04-08 01:40:32.069 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-1.pkl successfully
+2026-04-08 01:40:32.076 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-2.pkl successfully
+2026-04-08 01:40:32.081 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-3.pkl successfully
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+2026-04-08 01:40:32.087 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-4.pkl successfully
+2026-04-08 01:40:32.092 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-5.pkl successfully
+2026-04-08 01:40:32.096 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-6.pkl successfully
+2026-04-08 01:40:32.102 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-7.pkl successfully
+2026-04-08 01:40:32.106 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-8.pkl successfully
+2026-04-08 01:40:32.110 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-9.pkl successfully
+2026-04-08 01:40:32.115 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-10.pkl successfully
+2026-04-08 01:40:32.119 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-11.pkl successfully
+2026-04-08 01:40:32.123 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-12.pkl successfully
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+2026-04-08 01:40:32.128 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-13.pkl successfully
+2026-04-08 01:40:32.133 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-14.pkl successfully
+2026-04-08 01:40:32.139 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-15.pkl successfully
+2026-04-08 01:40:32.143 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-16.pkl successfully
+2026-04-08 01:40:32.147 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-17.pkl successfully
+2026-04-08 01:40:32.151 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-18.pkl successfully
+2026-04-08 01:40:32.155 | INFO | PID:4227 | agent.save_model:113 - learner save model /data/ckpt/gorge_chase_ppo/model.ckpt-19.pkl successfully
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
+aisrv is alive
+[reverb/cc/client.cc:165] Sampler and server are owned by the same process (4227) so Table reverb_replay_buffer_table_0 is accessed directly without gRPC.
