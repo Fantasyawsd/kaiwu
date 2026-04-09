@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Skill(update-config)",
+      "Bash(gh api:*)",
+      "Bash(command -v node)",
+      "Bash(command -v npm)",
+      "Bash(npm --version)",
+      "Bash(command -v claude)",
+      "Bash(claude --version)",
+      "Bash(curl:*)",
+      "Bash(npm view:*)",
+      "Bash(npm search:*)"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+# Python cache
+*.pyc
+__pycache__/
+
+# project artifacts
+ckpt/
+.claude/worktrees/
+# binary caches
+**/__pycache__/**
+*.cpython-*.pyc
+
+.obsidian/
