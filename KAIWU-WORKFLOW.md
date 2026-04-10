@@ -1,380 +1,444 @@
-# KAIWU-WORKFLOW
-
-## 1. 目的
-
-本文定义当前仓库的人机协作方式、文档分层、repo-local skills 使用顺序，以及算法实现与归档的标准闭环。
-
-使用本仓库时，优先遵守以下原则：
-
-1. 先读文档，再改代码。
-2. 先检查当前开发状态，再决定是继续未完成算法还是开启新方向。
-3. 先分析当前算法，再实现新改动。
-4. 实现过程中持续维护 DEV_MEMORY，使 AI 即使没有之前上下文也能快速接手。
-5. 小步验证，小步提交；完整算法完成后再做完整收口。
-6. 训练得分和实验结论不得虚构；没有结果就明确写“暂无”。
+本文定义 Gorge Chase KaiWuDRL 仓库的标准工作流、Skills 使用顺序、文档维护规则和 Git 协作要求。
 
 ---
 
-## 2. 文档地图
+## 1. 总体工作流
 
-### 2.1 根目录文档
+完整工作流固定为：
 
-- `README.md`
-  - 项目总入口。
-  - 说明当前项目结构、最小验证方式、repo-local skills 入口。
-- `KAIWU-WORKFLOW.md`
-  - 当前文件。
-  - 说明工作流、skills 顺序、文档同步规则、人和 AI 的协作闭环。
-- `CONTRIBUTE.md`
-  - Git 协作与提交规范。
-  - 说明分支、提交、合并、文档同步要求。
+```text
+算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练分析 -> 信息归档 -> 结束
+````
 
-### 2.2 GLOBAL_DOCS
+其中：
 
-`GLOBAL_DOCS/` 用于保存全局稳定信息，是项目级长期记忆。
-
-- `GLOBAL_DOCS/算法总表.md`
-  - 算法清单总入口。
-  - 记录已实现算法的算法名、完整算法名、训练得分、算法文档路径。
-  - 由 AI 维护，不记录未实现候选方向。
-- `GLOBAL_DOCS/算法调研.md`
-  - 外部调研候选方向入口。
-  - 主要由人维护，用于记录尚未实现的候选算法、论文方向、优化思路。
-- `GLOBAL_DOCS/算法文档/`
-  - 已实现算法的详细文档目录。
-  - 正式算法文档统一使用 `算法名_时间.md` 命名。
-- `GLOBAL_DOCS/TODO.md`
-  - 全局待办。
-  - 只保留跨轮次、跨算法仍然有意义的任务。
-- `GLOBAL_DOCS/CHANGELOG.md`
-  - 全局变更记录。
-  - 记录值得长期保留的重要实现、文档结构变更、训练结论、SOTA 记录。
-- `GLOBAL_DOCS/EXPERIENCE.md`
-  - 全局经验库。
-  - 只归档通用经验、常见坑、稳定可复用 trick。
-
-### 2.3 DEV_MEMORY
-
-`DEV_MEMORY/` 用于保存当前开发状态记忆，是开发过程中的外部记忆。
-
-它的首要目标不是长期沉淀，而是让 AI 在断线重连、会话中断、上下文丢失、任务转交后，仍然能仅凭仓库内文件快速恢复当前工作状态并继续推进。
-
-- `DEV_MEMORY/算法文档.md`
-  - 当前算法状态快照。
-  - 记录当前在做什么、做到哪一步、下一步准备做什么。
-- `DEV_MEMORY/TODO.md`
-  - 当前轮次待办与下一步。
-  - 应让新的 AI 一眼看出“现在最该做什么”。
-- `DEV_MEMORY/CHANGELOG.md`
-  - 当前轮次局部变更轨迹。
-  - 用于快速恢复“刚刚改了什么、验证到了哪一步”。
-- `DEV_MEMORY/EXPERIENCE.md`
-  - 当前轮次遇到的问题、解决方案、小 trick、风险记录。
-
-### 2.4 开发文档
-
-`开发文档/` 用于保存官方接口、环境规则、协议字段、框架流程。
-
-- `开发文档/README.md`：开发文档索引与查询入口。
-- `开发文档/开发文档.md`：总览文档。
-- `开发文档/开发指南/*`：赛题与环境说明。
-- `开发文档/腾讯开悟强化学习框架/*`：框架、Agent、workflow、模型、算法接口说明。
-- `开发文档/EXPERIENCE.md`：开发文档查询与理解过程中的经验模板。
-
-### 2.5 repo-local skills
-
-仓库内 skills 位于：
-
-- `.claude/skills/`
-- `.codex/skills/`
-- `.copilot/skills/`
-
-当前仓库约定拆分为 7 个核心 skills：
-
-- `/kaiwu-dev-init`
-- `/kaiwu-doc-query`
-- `/kaiwu-current-algo-analysis`
-- `/kaiwu-algo-implementation`
-- `/kaiwu-full-iteration`
-- `/kaiwu-version-control`
-- `/kaiwu-memory-archive`
+- **算法调研**：形成人类主导的候选方向，主要沉淀到 `GLOBAL_DOCS/算法调研.md`
+    
+- **算法落地**：把方向转成可以编码的实现方案，核心产物是 `DEV_MEMORY/NOW.md`
+    
+- **算法实现**：改代码、做最小验证、持续更新 `NOW.md`
+    
+- **算法测试**：以 `python3 train_test.py` 为主的 smoke test 与最小链路验证
+    
+- **算法训练**：由人发起平台真实训练
+    
+- **训练分析**：基于真实训练结果、日志和监控做判断
+    
+- **信息归档**：把稳定结论写入正式算法文档和算法总表，并完成 Git 收口
+    
 
 ---
 
-## 3. Skills 的职责与顺序
+## 2. 强制入口
 
-| Skill | 主要职责 | 典型输入 | 主要输出 | 下一步 |
-| --- | --- | --- | --- | --- |
-| `/kaiwu-dev-init` | 做开发前初始化 | 任务目标、算法名 | 分支建议、文档入口、当前开发起点 | `/kaiwu-doc-query` 或 `/kaiwu-current-algo-analysis` |
-| `/kaiwu-doc-query` | 查询开发文档与接口说明 | 问题、字段、接口、配置 | 文档依据、关键结论、相关路径 | `/kaiwu-current-algo-analysis` 或实现 |
-| `/kaiwu-current-algo-analysis` | 分析当前算法实现 | 算法名、目录、baseline | 算法入口、接口、超参数、限制 | `/kaiwu-algo-implementation` |
-| `/kaiwu-algo-implementation` | 执行算法实现闭环 | 目标算法或目标改动 | 代码改动、验证结果、DEV_MEMORY 更新 | `/kaiwu-version-control` 或 `/kaiwu-memory-archive` |
-| `/kaiwu-full-iteration` | 执行完整算法迭代闭环 | 目标算法、优化方向、全流程请求 | 从初始化到实现、收口、等待训练结果、归档的完整推进状态 | 结束或 `/kaiwu-version-control` |
-| `/kaiwu-version-control` | 做版本收口 | 本轮改动、提交范围 | 小步 commit / 完整 commit / push 建议 | `/kaiwu-memory-archive` 或结束 |
-| `/kaiwu-memory-archive` | 把 DEV_MEMORY 归档到 GLOBAL_DOCS | 当前轮次 DEV_MEMORY | 全局 TODO / CHANGELOG / EXPERIENCE / 算法文档更新 | `/kaiwu-version-control` |
-
-推荐默认顺序：
+任何新的开发轮次，第一步都必须先执行：
 
 ```text
 /kaiwu-dev-init
--> /kaiwu-doc-query
--> /kaiwu-current-algo-analysis
--> /kaiwu-algo-implementation
--> /kaiwu-version-control
--> /kaiwu-memory-archive
--> /kaiwu-version-control
 ```
-
-说明：
-
-- 第一次 `/kaiwu-version-control` 用于小步提交或阶段性收口。
-- `/kaiwu-memory-archive` 完成归档后，可再调用一次 `/kaiwu-version-control` 做最终文档收口。
-- 如果用户目标是“一次完整迭代走到底”，可直接使用 `/kaiwu-full-iteration` 作为总控 skill。
-
----
-
-## 4. 人与 AI 的协作闭环
-
-### 4.1 人负责的部分
-
-1. 外部调研算法、论文、改进方向。
-2. 把尚未实现的候选算法或方向写入 `GLOBAL_DOCS/算法调研.md`。
-3. 启动真实训练，记录平台训练日志或实验结果。
-4. 决定是否继续该方向、是否合并、是否推远程。
-
-### 4.2 AI 负责的部分
-
-1. 读取 README / workflow / 开发文档。
-2. 分析当前 baseline 与当前算法实现。
-3. 实现代码或补全文档。
-4. 执行最小验证。
-5. 维护 `DEV_MEMORY/*` 作为当前开发状态记忆，保证后续 AI 即使没有本次会话上下文也能快速接手。
-6. 维护 `GLOBAL_DOCS/算法总表.md` 作为已实现算法清单，并在需要时同步其他 `GLOBAL_DOCS/*`。
-7. 根据用户指令做版本管理与归档。
-
-### 4.3 协作边界
-
-- 人提出方向，AI 负责落地。
-- AI 不能虚构训练结果。
-- AI 不能跳过文档同步。
-- 正式 push / merge 以前，必须由人确认。
-
----
-
-## 5. 标准算法实现闭环
-
-### Stage 0：开发 init
-
-执行：`/kaiwu-dev-init`
-
-目标：
-
-- 拉取最新状态或至少确认当前 Git 状态。
-- 确认当前分支是否适合继续开发。
-- 阅读 `README.md` 与 `KAIWU-WORKFLOW.md`。
-- 确认算法总表、算法调研、DEV_MEMORY、开发文档入口。
-- 检查 `DEV_MEMORY/TODO.md`、`DEV_MEMORY/算法文档.md`，确认当前是否存在进行中 / 未完成算法实现。
-- 基于当前开发状态，明确本轮行动是“继续当前实现”还是“启动新方向”。
-
-### Stage 1：开发文档查询
-
-执行：`/kaiwu-doc-query`
-
-目标：
-
-- 查询环境、协议、接口、框架流程。
-- 明确哪些信息来自官方开发文档，哪些来自当前仓库实现。
-- 对有歧义的问题，优先回到 `开发文档/README.md` 进行路由。
-
-### Stage 2：分析当前算法实现
-
-执行：`/kaiwu-current-algo-analysis`
-
-目标：
-
-- 先根据开发状态确定当前目标算法。
-- 若存在进行中 / 未完成算法，且用户没有明确切换方向，默认该算法为当前目标。
-- 若不存在未完成算法，再从用户指定方向或 `GLOBAL_DOCS/算法调研.md` 中选择新方向。
-- 阅读对应算法文档和代码路径。
-- 输出当前算法实现细节、接口、超参数、workflow、已知限制。
-
-### Stage 3：算法实现
-
-执行：`/kaiwu-algo-implementation`
-
-目标：
-
-- 优先续做当前未完成算法；只有在无未完成算法，或用户明确要求切换方向时，才开始新算法实现。
-- 初始化或更新 `DEV_MEMORY/*`。
-- 进入“代码修改 -> 测试 -> 文档同步 -> 小步提交”的循环。
-
-本阶段必须持续维护：
-
-- `DEV_MEMORY/TODO.md`
-- `DEV_MEMORY/CHANGELOG.md`
-- `DEV_MEMORY/EXPERIENCE.md`
-- `DEV_MEMORY/算法文档.md`
-
-代码有实质性变化时，也要同步维护：
-
-- 当前正式算法文档
-- `GLOBAL_DOCS/算法总表.md`（当某个算法已实现并稳定落库，或其文档路径、训练得分发生变化）
-
-### Stage 4：版本管理
-
-执行：`/kaiwu-version-control`
-
-目标：
-
-- 检查工作区、差异、提交范围。
-- 形成小步 commit 或完整算法 commit。
-- 必要时准备 push，但是否真正 push 由用户决定。
-
-### Stage 5：信息归档
-
-执行：`/kaiwu-memory-archive`
-
-目标：
-
-- 从 `DEV_MEMORY/*` 中筛出有长期价值的内容。
-- 归档到 `GLOBAL_DOCS/*`。
-- 把当前算法草稿整理为正式算法文档。
-
-### Stage 6：最终收口
-
-再次执行：`/kaiwu-version-control`
-
-目标：
-
-- 确认代码、文档、归档内容都已同步。
-- 完成最终 commit。
-- 若用户明确要求，再 push 到远程。
-
-### Stage 7：完整迭代总控（可选）
-
-执行：`/kaiwu-full-iteration`
 
 适用场景：
 
-- 用户希望从项目熟悉、状态检查、目标确认一路推进到实现、训练结果整理、归档。
-- 用户不想手动拆分 skill 顺序，希望由一个 skill 串起整条闭环。
+- 新开一轮算法开发
+    
+- 继续上一轮未完成工作
+    
+- 会话中断后重新接手
+    
 
-目标：
-
-- 串起 Stage 0 到 Stage 6。
-- 在“需要用户执行真实训练”的位置显式停住等待。
-- 用户返回训练结果后，再完成结果整理、归档与最终收口。
-
----
-
-## 6. GLOBAL_DOCS 与 DEV_MEMORY 的同步规则
-
-### 6.1 何时更新 DEV_MEMORY
-
-以下场景必须更新 `DEV_MEMORY/*`：
-
-- 确定本轮目标算法或主假设时。
-- 改动代码后。
-- 跑完最小验证后。
-- 遇到问题并定位到原因时。
-- 发现有价值的小 trick、解决方案时。
-- 任何可能导致会话中断、任务转交、需要稍后继续的节点。
-
-### 6.2 何时更新 GLOBAL_DOCS
-
-以下场景必须更新 `GLOBAL_DOCS/*`：
-
-- 算法从“未实现”变为“已实现”。
-- 当前实现名或算法文档路径发生变化。
-- 训练得分或实验结论得到确认。
-- 某个经验已经证明是跨轮次有效的稳定经验。
-- 某个 TODO / CHANGELOG 不再只是当前任务局部信息，而成为全局事项。
-
-### 6.3 归档原则
-
-- `DEV_MEMORY` 首先是当前开发状态记忆，其次才是工作草稿，不追求稳定排版。
-- `DEV_MEMORY` 的写法要优先服务于“无上下文快速接手”和“断线重连”。
-- `GLOBAL_DOCS` 是长期知识库，要求结构清晰、可被后续 AI 直接读取。
-- 不要把 `DEV_MEMORY` 原样整份复制到 `GLOBAL_DOCS`；必须先过滤、整理、去重。
+只有极小的纯文本修订可以不走这一步。
 
 ---
 
-## 7. Git 协作工作流
+## 3. 文档维护规范
 
-推荐流程：
+### 3.1 DEV_MEMORY（开发状态记忆）
 
-1. `git pull` 拉取最新代码。
-2. 创建或切换到 `feature/*` 分支。
-3. 阅读 `README.md`、`KAIWU-WORKFLOW.md`、`CONTRIBUTE.md`。
-4. 开发与最小验证。
-5. 做小步 commit。
-6. 算法完整实现后，再做完整 commit。
-7. 用户确认后，再 push / merge。
+**文件**：`DEV_MEMORY/NOW.md`
 
-约束：
+**目的**：保存当前开发状态，使 AI 或人在断线重连、会话中断、任务转交后能仅凭仓库文件快速恢复并继续。
 
-- `main` 只接受已经完整实现、并经过验证的版本。
-- 非微小改动不要直接在 `main` 上开发。
-- 未更新文档前，不做“完整实现”收口提交。
+**作用**：
 
----
+- 保存当前轮次的设计、实现进度和下一步计划
+    
+- 让 AI 或人重新接手时能快速恢复上下文
+    
+- 在算法实现收尾阶段，支持整理为正式算法文档初稿
+    
 
-## 8. 文档同步硬规则
+**必须包含的三部分**：
 
-每完成一个有意义的改动，至少检查以下清单：
+1. **当前要实现算法的具体内容**：本轮目标、假设、预期改动
+    
+2. **当前的实现进度**：已完成什么、遇到什么问题、解决方案
+    
+3. **下一步计划**：接下来要做什么、优先级、依赖条件
+    
 
-- 代码是否已验证？
-- `DEV_MEMORY/TODO.md` 是否更新？
-- `DEV_MEMORY/CHANGELOG.md` 是否更新？
-- `DEV_MEMORY/EXPERIENCE.md` 是否更新？
-- 当前算法文档是否补充了实现细节？
-- 如果状态变化已稳定，是否同步到 `GLOBAL_DOCS/算法总表.md`？
-- 如果是通用经验，是否同步到 `GLOBAL_DOCS/EXPERIENCE.md`？
+**维护时机**：
 
----
-
-## 9. 当前仓库的基线结论
-
-- 当前完整可运行 baseline：`agent_ppo/`
-- 当前模板算法：`agent_diy/`
-- 当前 smoke / 最小验证入口：`python3 train_test.py`
-- 当前平台启用算法：`conf/app_conf_gorge_chase.toml` 中 `algo = "ppo"`
-- 当前 workflow 注册：`conf/algo_conf_gorge_chase.toml` 中 `ppo -> agent_ppo.workflow.train_workflow.workflow`
+- 确定本轮目标时
+    
+- 改动代码后
+    
+- 跑完验证后
+    
+- 遇到问题或解决问题时
+    
+- 任何可能导致会话中断的节点
+    
 
 ---
 
-## 10. 使用建议
+### 3.2 GLOBAL_DOCS（全局稳定知识库）
 
-如果目标是继续做算法开发，推荐直接按下面顺序开始：
+**目的**：长期沉淀已验证的算法知识，供后续轮次查阅参考。
 
-```text
-/kaiwu-dev-init
-/kaiwu-doc-query
-/kaiwu-current-algo-analysis
-/kaiwu-algo-implementation
-```
+**核心文件**：
 
-如果目标是挑选新的未实现方向，先看：
+|文件/目录|作用|维护者|
+|---|---|---|
+|`GLOBAL_DOCS/算法总表.md`|算法清单总入口：算法名、完整名、训练得分、状态、文档路径|AI|
+|`GLOBAL_DOCS/算法调研.md`|候选方向记录：尚未实现的外部调研、论文方向、优化思路|人|
+|`GLOBAL_DOCS/算法文档/`|正式算法文档目录，命名格式：`算法名_时间.md`|AI|
 
-```text
-GLOBAL_DOCS/算法调研.md
-```
+**维护时机**：
 
-如果目标是一次执行完整迭代闭环，推荐：
+- 算法从“未实现”变为“已实现”
+    
+- 训练得分得到真实平台结果确认
+    
+- 算法实现细节已稳定、可跨轮次复用
+    
 
-```text
-/kaiwu-full-iteration
-```
-
-如果目标是整理和归档当前开发成果，推荐：
+**维护方法**：
 
 ```text
 /kaiwu-memory-archive
-/kaiwu-version-control
 ```
 
-如果目标是只看当前 baseline 而不改代码，推荐：
+**原则**：
+
+- 不把 `DEV_MEMORY/NOW.md` 原样复制到正式文档
+    
+- 只归档已验证的稳定信息
+    
+- 训练结果必须来自真实平台
+    
+
+---
+
+## 4. Skills 体系
+
+### 4.1 Skills 列表
+
+|Skill|核心功能|使用阶段|
+|---|---|---|
+|`/kaiwu-dev-init`|开发轮次初始化，强制入口|所有轮次的第一步|
+|`/kaiwu-doc-query`|查询开发文档与接口规则|任意阶段按需调用|
+|`/kaiwu-current-algo-analysis`|分析当前算法实现与入口链|实现前、排障前、仅查看现状时|
+|`/kaiwu-algo-design`|把调研方向落成可实现方案，补齐环境配置和超参数，写入 `NOW.md`|算法落地|
+|`/kaiwu-algo-implementation`|基于源码理解完成实现、测试、`NOW.md` 更新，并产出算法文档初稿|算法实现 + 算法测试|
+|`/kaiwu-train-analysis`|基于真实训练结果做分析并给出下一轮建议|训练分析|
+|`/kaiwu-memory-archive`|最终归档、重置 `NOW.md`、commit、push、merge 指引|信息归档|
+
+---
+
+### 4.2 标准调用流程
+
+#### 新方向完整流程
 
 ```text
-/kaiwu-current-algo-analysis
+/kaiwu-dev-init
+-> /kaiwu-algo-design
+-> /kaiwu-algo-implementation
+-> 人执行真实训练
+-> /kaiwu-train-analysis
+-> /kaiwu-memory-archive
+```
+
+#### 继续已有方向
+
+```text
+/kaiwu-dev-init
+-> /kaiwu-algo-implementation
+```
+
+#### 仅查看现状
+
+```text
+/kaiwu-dev-init
+-> /kaiwu-current-algo-analysis
+```
+
+---
+
+### 4.3 Skill 调用规则
+
+- 任何非微小改动前，必须先调 `/kaiwu-dev-init`
+    
+- 新方向不得跳过 `/kaiwu-algo-design`
+    
+- `/kaiwu-algo-design` 只产出方案并写入 `NOW.md`，不直接改代码
+    
+- `/kaiwu-algo-design` 必须基于开发文档补齐环境配置和超参数
+    
+- `/kaiwu-algo-implementation` 必须先理解源码落点，再改文件
+    
+- `/kaiwu-algo-implementation` 应采用小步迭代：实现 → 烟测 → 更新 `NOW.md` → 小步 commit
+    
+- `/kaiwu-algo-implementation` 的最后一步是生成正式算法文档初稿
+    
+- 训练完成后必须单独调用 `/kaiwu-train-analysis`，不直接把训练结果混入实现过程
+    
+- `/kaiwu-memory-archive` 是最终收口步骤，负责归档、重置 `NOW.md`、commit、push 和 merge 指引
+    
+- 不自动 push，所有 push 需用户确认后执行
+    
+
+---
+
+## 5. Git 协作规范
+
+### 5.1 分支策略
+
+|分支|用途|
+|---|---|
+|`main`|只接收完成验证并归档完毕的版本|
+|`feature/<topic>`|算法实现、优化、文档治理与工作流更新|
+
+**命名示例**：
+
+- `feature/ppo-reward-shaping`
+    
+- `feature/add-lstm-network`
+    
+- `feature/update-workflow-docs`
+    
+
+---
+
+### 5.2 开发前检查
+
+1. `git pull`
+    
+2. `git status`
+    
+3. 如当前在 `main` 且准备做非微小改动，切换到 `feature/*`
+    
+4. 阅读 `README.md`、`KAIWU-WORKFLOW.md`、`GLOBAL_DOCS/算法总表.md`
+    
+5. 检查 `DEV_MEMORY/NOW.md`，确认是否有未完成轮次
+    
+6. 执行 `/kaiwu-dev-init`
+    
+
+---
+
+### 5.3 Commit 规范
+
+#### 小步提交（阶段性、可独立验证的步骤）
+
+```text
+<type>(<scope>): <简短描述>
+
+- 改动内容：<具体改了什么>
+- 涉及文件：<文件列表>
+- 接口变化：<如有>
+- 烟测状态：通过
+```
+
+#### 完整算法提交（算法完整实现并稳定）
+
+```text
+feat(<scope>): <算法完整名>
+
+- 实现内容：<本轮完成的全部功能>
+- 关键设计：<超参数、网络结构、奖励设计等>
+- 涉及文件：<主要改动文件列表>
+- 烟测状态：通过
+- 训练状态：<待训练 / 训练中 / 得分 xxx>
+- 算法文档：<对应文档路径>
+```
+
+**禁止事项**：
+
+- 不编造训练得分
+    
+- 不跳过文档同步做完整提交
+    
+- 不在 `main` 直接做非微小改动
+    
+
+---
+
+### 5.4 Push / Merge 规则
+
+1. 本地验证通过
+    
+2. 文档已同步
+    
+3. 用户确认后再 push
+    
+4. 完整验证前不合并到 `main`
+    
+
+---
+
+## 6. 人机协作边界
+
+### 6.1 人负责
+
+- 决定本轮优化目标和主假设
+    
+- 外部调研算法、论文、改进方向，并写入 `GLOBAL_DOCS/算法调研.md`
+    
+- 与 AI 讨论并确认算法设计方案
+    
+- 启动真实平台训练，提供训练结果
+    
+- 决定是否继续、切换、合并、push
+    
+
+---
+
+### 6.2 AI 负责
+
+- 读取仓库文档和开发文档
+    
+- 分析基线与当前算法实现
+    
+- 将调研方向转化为设计方案
+    
+- 完成代码修改与最小验证
+    
+- 维护 `DEV_MEMORY/NOW.md`
+    
+- 分析训练结果并给出建议
+    
+- 稳定后归档到 `GLOBAL_DOCS`
+    
+
+**约束**：
+
+- 实现阶段允许做本地 commit
+    
+- 不虚构训练结果
+    
+- 不自动 push / merge
+    
+- merge 前必须确认算法文档与算法总表已同步
+    
+
+---
+
+### 6.3 协作原则
+
+- 人提方向，AI 负责落地
+    
+- AI 不虚构训练结果
+    
+- AI 不自动 push / merge
+    
+- 所有归档内容必须经过验证
+    
+
+---
+
+## 7. 快速参考
+
+### 7.1 最小验证命令
+
+```bash
+docker exec -it kaiwu-dev-kaiwudrl-1 bash
+python3 train_test.py
+```
+
+---
+
+### 7.2 代码入口链
+
+```text
+train_test.py
+-> conf/app_conf_gorge_chase.toml
+-> conf/algo_conf_gorge_chase.toml
+-> agent_ppo/conf/conf.py
+-> agent_ppo/conf/train_env_conf.toml
+-> agent_ppo/agent.py
+-> agent_ppo/feature/preprocessor.py
+-> agent_ppo/feature/definition.py
+-> agent_ppo/model/model.py
+-> agent_ppo/algorithm/algorithm.py
+-> agent_ppo/workflow/train_workflow.py
+```
+
+---
+
+### 7.3 常见修改定位
+
+|目标|文件|
+|---|---|
+|奖励 / 特征 / 合法动作|`agent_ppo/feature/preprocessor.py`|
+|样本结构 / GAE|`agent_ppo/feature/definition.py`|
+|网络结构|`agent_ppo/model/model.py`|
+|PPO 损失|`agent_ppo/algorithm/algorithm.py`|
+|超参数|`agent_ppo/conf/conf.py`|
+|训练循环 / workflow / 监控|`agent_ppo/workflow/train_workflow.py`|
+
+---
+
+## 8. 完整工作流示例
+
+**场景：从调研到训练分析的完整周期**
+
+```text
+# 阶段 1：设计
+/kaiwu-dev-init
+# -> 确认当前分支，NOW.md 为空
+
+/kaiwu-algo-design "添加LSTM网络"
+# -> 读取算法调研.md，了解基线
+# -> 与用户讨论：LSTM 维度、seq_len、学习率调整
+# -> 生成算法完整名：agent_ppo_20260410_lstm_v1
+# -> 写入 NOW.md
+
+# 阶段 2：实现（多轮小步迭代）
+/kaiwu-algo-implementation
+# -> 第 1 步：修改 model.py 添加 LSTM 层
+#    烟测 -> 更新 NOW -> 小步 commit
+# -> 第 2 步：调整 conf.py 超参数
+#    烟测 -> 更新 NOW -> 小步 commit
+# -> 第 3 步：修改 workflow 支持序列输入
+#    烟测 -> 更新 NOW -> 小步 commit
+# -> 最终烟测 -> 最终 commit
+
+# 阶段 3：训练（人执行）
+人：在平台启动训练，记录任务 ID 和结果
+
+# 阶段 4：分析
+/kaiwu-train-analysis "任务ID: xxx, 得分: 85.3"
+# -> 分析结果，更新算法总表
+# -> 给出下一步建议
+
+# 阶段 5：归档
+/kaiwu-memory-archive
+# -> 创建正式算法文档
+# -> 更新算法总表
+```
+
+---
+
+## 9. 最简流程速查
+
+```text
+算法调研
+-> /kaiwu-dev-init
+-> /kaiwu-algo-design
+-> /kaiwu-algo-implementation
+-> 本地 smoke test
+-> 人执行平台训练
+-> /kaiwu-train-analysis
+-> /kaiwu-memory-archive
+-> 结束
 ```
