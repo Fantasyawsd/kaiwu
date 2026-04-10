@@ -17,23 +17,16 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 ## 强制前置步骤
 
-\- 当前是在继续上一轮，还是开启新方向
+- 根据用户指令，判断实现**用户指定算法**/**继续完成NOW.md**
 
-\- 当前 baseline 算法和正式算法文档是什么
-
-\- 当前 `NOW.md` 有无未完成任务
-
-\- 当前分支和工作区是否适合继续开发
-
-\- 当前是否已经位于本轮开发对应的 `feature/*` 分支
+- 当前 baseline 算法和正式算法文档是什么
 
 如果这些信息不清楚，先回到 `/kaiwu-dev-init`，不要直接改代码。
 
-若当前不在 `feature/*` 分支，停止当前 skill，并先创建或切换分支：
+**查看当前所处分支，是否为该算法实现对应分支，若否，则根据当前实现的算法创建新分支**
 
-\- `git checkout -b feature/<topic>`
-
-\- 或 `git checkout feature/<topic>`
+- `git branch`
+- `git checkout -b feature/*`
 
 ## 实现前必须具备的前置知识
 
