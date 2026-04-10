@@ -50,6 +50,7 @@ GAMEOVER_RE = re.compile(
     r"flash:(?P<flash>\d+) )?"
     r"total_reward:(?P<total_reward>-?\d+(?:\.\d+)?)"
 )
+TRAINING_METRICS_RE = re.compile(r"training_metrics is (?P<data>\{.*\})")
 ENV_FINISH_RE = re.compile(r"finish monitor_data is (?P<data>\{.*\})")
 
 
@@ -286,6 +287,51 @@ def parse_aisrv(records: Iterable[dict[str, Any]]) -> pd.DataFrame:
     return df
 
 
+def parse_training_metrics(
+    records: Iterable[dict[str, Any]]
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    basic_rows: list[dict[str, Any]] = []
+    algorithm_rows: list[dict[str, Any]] = []
+    env_rows: list[dict[str, Any]] = []
+
+    for record in records:
+        message = record.get("message", "")
+        match = TRAINING_METRICS_RE.search(message)
+        if not match:
+            continue
+
+        payload = ast.literal_eval(match.group("data"))
+        base = {
+            "time": record["_time"],
+            "pid": record.get("pid"),
+            "source_file": record["_source_file"],
+        }
+
+        basic_payload = payload.get("basic")
+        if isinstance(basic_payload, dict):
+            row = dict(base)
+            row.update(basic_payload)
+            basic_rows.append(row)
+
+        algorithm_payload = payload.get("algorithm")
+        if isinstance(algorithm_payload, dict):
+            row = dict(base)
+            row.update(algorithm_payload)
+            algorithm_rows.append(row)
+
+        env_payload = payload.get("env")
+        if isinstance(env_payload, dict):
+            row = dict(base)
+            row.update(env_payload)
+            env_rows.append(row)
+
+    return (
+        to_dataframe(basic_rows, "time"),
+        to_dataframe(algorithm_rows, "time"),
+        to_dataframe(env_rows, "time"),
+    )
+
+
 def parse_env(records: Iterable[dict[str, Any]]) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
 
@@ -370,6 +416,9 @@ def write_csvs(
     learner_train_df: pd.DataFrame,
     learner_step_df: pd.DataFrame,
     learner_skip_df: pd.DataFrame,
+    basic_metrics_df: pd.DataFrame,
+    algorithm_metrics_df: pd.DataFrame,
+    training_env_metrics_df: pd.DataFrame,
     aisrv_df: pd.DataFrame,
     env_df: pd.DataFrame,
 ) -> dict[str, str]:
@@ -378,6 +427,9 @@ def write_csvs(
         "learner_train_metrics.csv": learner_train_df,
         "learner_step_metrics.csv": learner_step_df,
         "learner_skip_updates.csv": learner_skip_df,
+        "aisrv_basic_metrics.csv": basic_metrics_df,
+        "aisrv_algorithm_metrics.csv": algorithm_metrics_df,
+        "aisrv_env_metrics.csv": training_env_metrics_df,
         "aisrv_episode_metrics.csv": aisrv_df,
         "env_episode_metrics.csv": env_df,
     }
@@ -405,13 +457,23 @@ def build_summary(
     learner_train_df: pd.DataFrame,
     learner_step_df: pd.DataFrame,
     learner_skip_df: pd.DataFrame,
+    basic_metrics_df: pd.DataFrame,
+    algorithm_metrics_df: pd.DataFrame,
+    training_env_metrics_df: pd.DataFrame,
     aisrv_df: pd.DataFrame,
     env_df: pd.DataFrame,
     csv_outputs: dict[str, str],
     chart_path: Path,
 ) -> dict[str, Any]:
     effective_end_time = end_time or collect_end_time(
-        learner_train_df, learner_step_df, learner_skip_df, aisrv_df, env_df
+        learner_train_df,
+        learner_step_df,
+        learner_skip_df,
+        basic_metrics_df,
+        algorithm_metrics_df,
+        training_env_metrics_df,
+        aisrv_df,
+        env_df,
     )
     duration_seconds = None
     if start_time and effective_end_time:
@@ -460,6 +522,38 @@ def build_summary(
             "last_train_count": numeric_last(learner_step_df, "train_count"),
             "mean_train_ms": numeric_mean(learner_step_df, "train_ms"),
             "mean_sample_ratio": numeric_mean(learner_step_df, "sample_ratio"),
+        },
+        "basic_metrics": {
+            "points": len(basic_metrics_df),
+            "last_train_global_step": numeric_last(basic_metrics_df, "train_global_step"),
+            "last_sample_ratio": numeric_last(
+                basic_metrics_df, "sample_production_and_consumption_ratio"
+            ),
+            "last_episode_cnt": numeric_last(basic_metrics_df, "episode_cnt"),
+            "last_sample_receive_cnt": numeric_last(basic_metrics_df, "sample_receive_cnt"),
+            "last_predict_succ_cnt": numeric_last(basic_metrics_df, "predict_succ_cnt"),
+            "last_load_model_succ_cnt": numeric_last(basic_metrics_df, "load_model_succ_cnt"),
+        },
+        "training_algorithm_metrics": {
+            "points": len(algorithm_metrics_df),
+            "last_reward": numeric_last(algorithm_metrics_df, "reward"),
+            "last_total_loss": numeric_last(algorithm_metrics_df, "total_loss"),
+            "last_value_loss": numeric_last(algorithm_metrics_df, "value_loss"),
+            "last_policy_loss": numeric_last(algorithm_metrics_df, "policy_loss"),
+            "last_entropy_loss": numeric_last(algorithm_metrics_df, "entropy_loss"),
+        },
+        "training_env_metrics": {
+            "points": len(training_env_metrics_df),
+            "last_total_score": numeric_last(training_env_metrics_df, "total_score"),
+            "last_treasure_score": numeric_last(training_env_metrics_df, "treasure_score"),
+            "last_step_score": numeric_last(training_env_metrics_df, "step_score"),
+            "last_finished_steps": numeric_last(training_env_metrics_df, "finished_steps"),
+            "last_treasures_collected": numeric_last(
+                training_env_metrics_df, "treasures_collected"
+            ),
+            "last_flash_count": numeric_last(training_env_metrics_df, "flash_count"),
+            "last_collected_buff": numeric_last(training_env_metrics_df, "collected_buff"),
+            "last_monster_speed": numeric_last(training_env_metrics_df, "monster_speed"),
         },
         "aisrv": {
             "episodes": len(aisrv_df),
@@ -630,6 +724,9 @@ def write_summary_files(output_dir: Path, summary: dict[str, Any]) -> None:
         json.dump(summary, handle, ensure_ascii=False, indent=2)
 
     learner = summary["learner"]
+    basic_metrics = summary["basic_metrics"]
+    training_algorithm_metrics = summary["training_algorithm_metrics"]
+    training_env_metrics = summary["training_env_metrics"]
     aisrv = summary["aisrv"]
     env = summary["env"]
     time_window = summary["time_window"]
@@ -660,6 +757,34 @@ def write_summary_files(output_dir: Path, summary: dict[str, Any]) -> None:
 - 最新 global_step: `{learner["last_global_step"]}`
 - 平均 train_ms: `{learner["mean_train_ms"]}`
 - 平均 sample_ratio: `{learner["mean_sample_ratio"]}`
+
+## Basic Metrics
+- points: `{basic_metrics["points"]}`
+- latest train_global_step: `{basic_metrics["last_train_global_step"]}`
+- latest sample_ratio: `{basic_metrics["last_sample_ratio"]}`
+- latest episode_cnt: `{basic_metrics["last_episode_cnt"]}`
+- latest sample_receive_cnt: `{basic_metrics["last_sample_receive_cnt"]}`
+- latest predict_succ_cnt: `{basic_metrics["last_predict_succ_cnt"]}`
+- latest load_model_succ_cnt: `{basic_metrics["last_load_model_succ_cnt"]}`
+
+## Training Algorithm Metrics
+- points: `{training_algorithm_metrics["points"]}`
+- latest reward: `{training_algorithm_metrics["last_reward"]}`
+- latest total_loss: `{training_algorithm_metrics["last_total_loss"]}`
+- latest value_loss: `{training_algorithm_metrics["last_value_loss"]}`
+- latest policy_loss: `{training_algorithm_metrics["last_policy_loss"]}`
+- latest entropy_loss: `{training_algorithm_metrics["last_entropy_loss"]}`
+
+## Training Env Metrics
+- points: `{training_env_metrics["points"]}`
+- latest total_score: `{training_env_metrics["last_total_score"]}`
+- latest treasure_score: `{training_env_metrics["last_treasure_score"]}`
+- latest step_score: `{training_env_metrics["last_step_score"]}`
+- latest finished_steps: `{training_env_metrics["last_finished_steps"]}`
+- latest treasures_collected: `{training_env_metrics["last_treasures_collected"]}`
+- latest flash_count: `{training_env_metrics["last_flash_count"]}`
+- latest collected_buff: `{training_env_metrics["last_collected_buff"]}`
+- latest monster_speed: `{training_env_metrics["last_monster_speed"]}`
 
 ## AISrv
 - 对局数: `{aisrv["episodes"]}`
@@ -720,6 +845,9 @@ def main() -> int:
     env_records = list(iter_json_records(files["kaiwu_env"], start_time, end_time))
 
     learner_train_df, learner_step_df, learner_skip_df = parse_learner(learner_records)
+    basic_metrics_df, algorithm_metrics_df, training_env_metrics_df = parse_training_metrics(
+        aisrv_records
+    )
     aisrv_df = parse_aisrv(aisrv_records)
     env_df = parse_env(env_records)
 
@@ -728,6 +856,9 @@ def main() -> int:
         learner_train_df,
         learner_step_df,
         learner_skip_df,
+        basic_metrics_df,
+        algorithm_metrics_df,
+        training_env_metrics_df,
         aisrv_df,
         env_df,
     )
@@ -757,6 +888,9 @@ def main() -> int:
         learner_train_df=learner_train_df,
         learner_step_df=learner_step_df,
         learner_skip_df=learner_skip_df,
+        basic_metrics_df=basic_metrics_df,
+        algorithm_metrics_df=algorithm_metrics_df,
+        training_env_metrics_df=training_env_metrics_df,
         aisrv_df=aisrv_df,
         env_df=env_df,
         csv_outputs=csv_outputs,
