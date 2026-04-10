@@ -14,6 +14,7 @@ import os
 import time
 
 import numpy as np
+from agent_ppo.conf.conf import Config
 from agent_ppo.feature.definition import SampleData, sample_process
 from tools.metrics_utils import get_training_metrics
 from tools.train_env_conf_validate import read_usr_conf
@@ -90,6 +91,7 @@ class EpisodeRunner:
             obs_data, remain_info = self.agent.observation_process(env_obs)
 
             collector = []
+            reward_term_sums = {}
             self.episode_cnt += 1
             done = False
             step = 0
@@ -120,23 +122,33 @@ class EpisodeRunner:
                 # Step reward / 每步即时奖励
                 reward = np.array(_remain_info.get("reward", [0.0]), dtype=np.float32)
                 total_reward += float(reward[0])
+                reward_terms = _remain_info.get("reward_terms", {})
+                for key, value in reward_terms.items():
+                    reward_term_sums[key] = reward_term_sums.get(key, 0.0) + float(value)
 
                 # Terminal reward / 终局奖励
                 final_reward = np.zeros(1, dtype=np.float32)
                 if done:
                     env_info = env_obs["observation"]["env_info"]
                     total_score = env_info.get("total_score", 0)
+                    treasures_collected = env_info.get("treasures_collected", 0)
+                    flash_count = env_info.get("flash_count", 0)
+                    finished_steps = env_info.get("finished_steps", step)
+                    max_step = env_info.get("max_step", step)
 
                     if terminated:
-                        final_reward[0] = -10.0
+                        final_reward[0] = Config.TERMINATED_PENALTY
                         result_str = "FAIL"
+                    elif finished_steps >= max_step:
+                        final_reward[0] = Config.TRUNCATED_BONUS
+                        result_str = "SURVIVE"
                     else:
-                        final_reward[0] = 10.0
-                        result_str = "WIN"
+                        result_str = "STOP"
 
                     self.logger.info(
                         f"[GAMEOVER] episode:{self.episode_cnt} steps:{step} "
                         f"result:{result_str} sim_score:{total_score:.1f} "
+                        f"treasures:{treasures_collected} flash:{flash_count} "
                         f"total_reward:{total_reward:.3f}"
                     )
 
@@ -167,6 +179,15 @@ class EpisodeRunner:
                             "reward": round(total_reward + float(final_reward[0]), 4),
                             "episode_steps": step,
                             "episode_cnt": self.episode_cnt,
+                            "total_score": round(float(env_info.get("total_score", 0.0)), 4),
+                            "treasures_collected": int(env_info.get("treasures_collected", 0)),
+                            "flash_count": int(env_info.get("flash_count", 0)),
+                            "treasure_reward": round(reward_term_sums.get("treasure_reward", 0.0), 4),
+                            "flash_escape_reward": round(
+                                reward_term_sums.get("flash_escape_reward", 0.0),
+                                4,
+                            ),
+                            "revisit_penalty": round(reward_term_sums.get("revisit_penalty", 0.0), 4),
                         }
                         self.monitor.put_data({os.getpid(): monitor_data})
                         self.last_report_monitor_time = now
