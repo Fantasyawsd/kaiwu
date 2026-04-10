@@ -34,6 +34,7 @@ git checkout -b feature/<topic>
 │   ├── model/              # PyTorch Actor-Critic 模型定义
 │   └── workflow/           # 训练工作流：数据收集、训练循环、模型保存
 ├── agent_diy/              # DIY 模板（仅作模板参考，不作为正式算法实现目录）
+├── reference_algos/        # 外部参考算法源码（调研得到的第三方算法实现，供借鉴）
 ├── conf/                   # 平台与训练系统级配置
 │   ├── app_conf_gorge_chase.toml   # 平台算法选择：当前启用哪个算法
 │   ├── algo_conf_gorge_chase.toml  # 算法名到 Agent/workflow 类的映射
@@ -87,6 +88,7 @@ git checkout -b feature/<topic>
 | `开发文档/` | 官方开发文档，包含环境规则说明、数据协议定义、框架接口文档。AI 查询环境相关问题优先查阅此处。 |
 | `GLOBAL_DOCS/` | 全局稳定知识库。`算法总表.md` 记录所有已实现算法的状态和性能；`算法调研.md` 记录待调研的候选方向；`算法文档/` 存放各算法的详细实现文档。 |
 | `DEV_MEMORY/NOW.md` | 当前开发状态记忆。记录本轮要实现的内容、当前进度、下一步计划。用于 AI 断线重连后快速恢复上下文。 |
+| `reference_algos/` | 外部参考算法源码目录。存放调研得到的第三方算法完整实现（如 `hok_prelim/`），供设计/实现阶段参考借鉴。**不直接作为训练入口**。 |
 
 
 ### 其他关键文件

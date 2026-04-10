@@ -53,6 +53,25 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 - `开发文档/腾讯开悟强化学习框架/分布式计算框架.md`
 - `开发文档/腾讯开悟强化学习框架/监控与日志.md`
 
+## 必读外部参考源码
+
+如果本轮设计涉及参考外部调研算法（如 `hok_prelim`），必须同时查阅：
+
+1. `GLOBAL_DOCS/算法调研.md` - 了解外部算法的整体说明
+2. `reference_algos/<算法名>/README.md` - 该算法的详细说明
+3. `reference_algos/<算法名>/code/` 下的核心源码文件：
+   - `agent.py` - Agent 接口与动作处理
+   - `feature/` 或 `feature/state_manager.py` - 特征处理与奖励设计
+   - `model/model.py` - 网络结构定义
+   - `algorithm/algorithm.py` - 训练逻辑
+   - `workflow/train_workflow.py` - 训练流程
+
+**设计要求**：
+
+- 明确标注哪些思路来自外部参考源码
+- 说明哪些组件可直接迁移、哪些需要适配、哪些不适合本项目
+- 给出外部源码到本项目 `agent_ppo/` 的映射关系
+
 ## 必须确认的源码入口
 
 在设计里至少定位到这些文件：

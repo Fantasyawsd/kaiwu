@@ -30,7 +30,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 ## 实现前必须具备的前置知识
 
-### 1. 开发文档理解
+### 1. 开发文档与外部参考理解
 
 至少要知道：
 
@@ -38,6 +38,16 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 - 训练系统配置来自 `conf/configure_app.toml`
 - 环境返回结构、动作空间、字段协议来自 `开发文档/开发指南/环境详述.md` 与 `开发文档/开发指南/数据协议.md`
 - Agent / 特征 / 模型 / 算法 / workflow 的框架接口来自 `开发文档/腾讯开悟强化学习框架/智能体/*.md`
+
+**若涉及外部参考算法**：
+
+- 查阅 `reference_algos/<算法名>/README.md` 了解整体结构
+- 查阅 `reference_algos/<算法名>/code/` 下的具体实现：
+  - 特征处理代码（如 `feature/state_manager.py`）
+  - 模型结构代码（如 `model/model.py`）
+  - 奖励计算逻辑
+- **明确区分**：哪些代码可以直接迁移、哪些需要适配修改、哪些不能照搬
+- 在实现注释中标注灵感来源（如 `# 思路来自 reference_algos/hok_prelim/...`）
 
 ### 2. 项目源码入口理解
 
