@@ -17,16 +17,23 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 ## 强制前置步骤
 
-开始实现前，必须先执行 `/kaiwu-dev-init`。
+\- 当前是在继续上一轮，还是开启新方向
 
-只有在下面几点已经清楚时，才允许进入代码修改：
+\- 当前 baseline 算法和正式算法文档是什么
 
-- 当前是在继续上一轮，还是开启新方向
-- 当前 baseline 算法和正式算法文档是什么
-- 当前 `NOW.md` 有无未完成任务
-- 当前分支和工作区是否适合继续开发
+\- 当前 `NOW.md` 有无未完成任务
+
+\- 当前分支和工作区是否适合继续开发
+
+\- 当前是否已经位于本轮开发对应的 `feature/*` 分支
 
 如果这些信息不清楚，先回到 `/kaiwu-dev-init`，不要直接改代码。
+
+若当前不在 `feature/*` 分支，停止当前 skill，并先创建或切换分支：
+
+\- `git checkout -b feature/<topic>`
+
+\- 或 `git checkout feature/<topic>`
 
 ## 实现前必须具备的前置知识
 

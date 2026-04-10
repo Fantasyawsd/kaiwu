@@ -15,13 +15,11 @@ allowed-tools: Bash(*), Read, Grep, Glob
 
 这是算法开发的第一步，必须优先使用。
 
-## 强制规则
-
-- 任意新的开发轮次，第一步必须执行 `/kaiwu-dev-init`
-- 未执行本 skill，不进入 `/kaiwu-algo-design` 或 `/kaiwu-algo-implementation`
-- 如果 `GLOBAL_DOCS/算法总表.md` 与 `DEV_MEMORY/NOW.md` 不一致，必须先指出冲突
-
 ## 执行步骤
+
+### Step 0:检查分支
+
+任意非微小算法开发前，必须先创建或切换到 `feature/*` 分支，若当前分支不是 `feature/*`，本 skill 必须阻断后续算法设计/实现，并明确给出切分支命令建议
 
 ### Step 1：检查 Git 状态
 

@@ -3,7 +3,25 @@
 腾讯开悟（KaiWuDRL）"峡谷追猎 / Gorge Chase"强化学习代码包。训练智能体控制鲁班七号，在 128×128 栅格地图中躲避怪物、收集宝箱，尽量存活到最大步数（1000 步）。
 
 ---
+## 开发前置动作
 
+进入任何非微小算法开发前，必须先完成下面这组 Git 起手动作：
+
+```bash
+
+git pull
+
+git status
+
+git checkout -b feature/<topic>
+
+```
+
+如果分支已经存在，就切换到已有的 `feature/<topic>`。
+
+只有在已经位于合适的 `feature/*` 分支后，才进入算法设计、算法实现、算法测试和归档流程；第一个 skill 必须是 `/kaiwu-dev-init`。
+
+---
 ## 项目结构
 
 ```text

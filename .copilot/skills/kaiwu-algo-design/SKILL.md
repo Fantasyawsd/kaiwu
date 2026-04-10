@@ -17,14 +17,23 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 
 ## 前置要求
 
-开始算法设计前，必须先执行 `/kaiwu-dev-init`，确认：
-
 - 当前是否在继续上一轮开发
+
 - 当前 baseline 与正式算法文档是什么
+
 - `DEV_MEMORY/NOW.md` 是否已有未完成任务
+
 - 当前工作分支和 git 状态是否适合继续开发
 
+- 当前是否已经位于本轮开发对应的 `feature/*` 分支
+
 若未执行 `/kaiwu-dev-init`，先补做初始化，不直接进入设计。
+
+若当前不在 `feature/*` 分支，停止当前 skill，并先创建或切换分支：
+
+\- `git checkout -b feature/<topic>`
+
+\- 或 `git checkout feature/<topic>`
 
 ## 必读文档
 
