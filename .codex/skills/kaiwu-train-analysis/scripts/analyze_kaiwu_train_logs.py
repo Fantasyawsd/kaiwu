@@ -46,6 +46,8 @@ GAMEOVER_RE = re.compile(
     r"\[GAMEOVER\] episode:(?P<episode>\d+) "
     r"steps:(?P<steps>\d+) result:(?P<result>\w+) "
     r"sim_score:(?P<sim_score>-?\d+(?:\.\d+)?) "
+    r"(?:treasures:(?P<treasures>\d+) "
+    r"flash:(?P<flash>\d+) )?"
     r"total_reward:(?P<total_reward>-?\d+(?:\.\d+)?)"
 )
 ENV_FINISH_RE = re.compile(r"finish monitor_data is (?P<data>\{.*\})")
@@ -265,6 +267,8 @@ def parse_aisrv(records: Iterable[dict[str, Any]]) -> pd.DataFrame:
             "steps": int(match.group("steps")),
             "result": match.group("result"),
             "sim_score": float(match.group("sim_score")),
+            "treasures": int(match.group("treasures")) if match.group("treasures") else None,
+            "flash": int(match.group("flash")) if match.group("flash") else None,
             "total_reward": float(match.group("total_reward")),
         }
         rows.append(row)
@@ -275,6 +279,10 @@ def parse_aisrv(records: Iterable[dict[str, Any]]) -> pd.DataFrame:
         df["rolling_win_rate_100"] = df["is_win"].rolling(window=100, min_periods=1).mean()
         df["rolling_sim_score_100"] = df["sim_score"].rolling(window=100, min_periods=1).mean()
         df["rolling_total_reward_100"] = df["total_reward"].rolling(window=100, min_periods=1).mean()
+        if "treasures" in df.columns:
+            df["rolling_treasures_100"] = df["treasures"].rolling(window=100, min_periods=1).mean()
+        if "flash" in df.columns:
+            df["rolling_flash_100"] = df["flash"].rolling(window=100, min_periods=1).mean()
     return df
 
 
@@ -463,6 +471,10 @@ def build_summary(
             "last_total_reward": numeric_last(aisrv_df, "total_reward"),
             "mean_total_reward": numeric_mean(aisrv_df, "total_reward"),
             "max_total_reward": numeric_max(aisrv_df, "total_reward"),
+            "mean_treasures": numeric_mean(aisrv_df, "treasures"),
+            "max_treasures": numeric_max(aisrv_df, "treasures"),
+            "mean_flash": numeric_mean(aisrv_df, "flash"),
+            "max_flash": numeric_max(aisrv_df, "flash"),
             "last_steps": numeric_last(aisrv_df, "steps"),
             "mean_steps": numeric_mean(aisrv_df, "steps"),
             "max_steps": numeric_max(aisrv_df, "steps"),
@@ -659,6 +671,10 @@ def write_summary_files(output_dir: Path, summary: dict[str, Any]) -> None:
 - 最新 total_reward: `{aisrv["last_total_reward"]}`
 - 平均 total_reward: `{aisrv["mean_total_reward"]}`
 - 最大 total_reward: `{aisrv["max_total_reward"]}`
+- 平均 treasures: `{aisrv["mean_treasures"]}`
+- 最大 treasures: `{aisrv["max_treasures"]}`
+- 平均 flash: `{aisrv["mean_flash"]}`
+- 最大 flash: `{aisrv["max_flash"]}`
 - 平均 steps: `{aisrv["mean_steps"]}`
 - 最大 steps: `{aisrv["max_steps"]}`
 - 最佳 sim_score 对局: `{aisrv["best_sim_score_episode"]}`
