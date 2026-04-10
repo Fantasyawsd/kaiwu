@@ -1,387 +1,348 @@
-# NOW	
+# agent_ppo_20260410_hok_memory_map_v1 算法文档初稿
 
-## 当前要实现的算法具体内容
+**文档版本**：`agent_ppo_20260410_hok_memory_map_v1`  
+**记录日期**：2026-04-11  
+**当前状态**：已实现；容器内 smoke test 已跑通 monitor 注册、episode 交互、PPO 更新与 `save_model`；暂无正式训练得分
 
-## 本轮算法设计：agent_ppo_20260410_hok_memory_map_v1
+---
 
-### 1. 目标
+## 1. 算法概述
 
-- 本轮准备验证的主假设：
-  将 `hok_prelim` 中可迁移的“目标记忆 + 局部语义地图 + 分层奖励 + 闪现动作利用”落到当前 Gorge Chase PPO 基线上，即使不改成 DDQN，也能显著提升当前只会基础生存的 40 维 PPO baseline。
-- 明确不迁移的部分：
-  不直接照搬 `hok_prelim` 的 DDQN / target network 主训练框架；本项目当前训练链路、样本结构和算法基线已经稳定在 PPO，上层框架、监控和文档也围绕 PPO 建立，直接切 DQN 改动面过大、验证链路更长。
-- 本轮单一主方向：
-  做一个 “HOK 风格记忆地图 PPO” 版本，而不是同时并行尝试多个独立方向。
+- 任务目标：
+  在 Gorge Chase 赛题中控制鲁班七号躲避怪物、收集宝箱并尽可能存活到 `max_step=1000`。
+- 算法框架：
+  保持 `agent_ppo/` 现有 PPO Actor-Critic 训练链路，不切换为 DDQN。
+- 本轮核心改动：
+  - 动作空间从 8 扩展到 16，正式接入环境原生闪现动作。
+  - 观测从 40 维扩展到 528 维，引入 `4x11x11` 局部语义地图。
+  - 在 `preprocessor.py` 中加入宝箱 / buff 目标记忆、视野外方向距离估计、撞墙方向屏蔽、重复访问惩罚。
+  - 模型从纯扁平 MLP 升级为“结构化特征分支 + CNN 地图编码 + 控制分支”融合网络。
+  - workflow 增加 episode 级监控，补充 `total_score`、`treasures_collected`、`flash_count` 与奖励分量上报。
+- 重要取舍：
+  - 根据当前 Gorge Chase 开发文档，环境协议没有显式“终点”对象；因此 HOK 方案里的终点记忆没有直接迁入。
+  - 当前实现中的 `guide_dist_reward` 仅作为“无宝箱目标时的 buff 引导 fallback”，不是显式终点 shaping。
 
-### 2. 与当前 baseline 的差异
+---
 
-- 当前 baseline：
-  40 维结构化特征 + 8 维移动动作 + 怪物距离 shaping + 轻量探索奖励。
-- 新版本目标：
-  - 从 8 动作扩展到 16 动作，接入闪现。
-  - 从“仅局部 4x4 障碍物”升级为“多通道局部语义地图”。
-  - 从“仅看当前可见物体”升级为“对宝箱 / buff / 终点做位置记忆与方向距离估计”。
-  - 从“单一生存奖励”升级为“生存 / 收集 / 脱险 / 防绕圈 / 终局”的分层奖励。
-  - 保持 PPO，不切换成 DDQN。
+## 2. 代码入口链路
 
-### 3. 文档依据
+```text
+train_test.py
+-> conf/app_conf_gorge_chase.toml
+-> conf/algo_conf_gorge_chase.toml
+-> conf/configure_app.toml
+-> agent_ppo/conf/conf.py
+-> agent_ppo/conf/train_env_conf.toml
+-> agent_ppo/agent.py
+-> agent_ppo/feature/preprocessor.py
+-> agent_ppo/feature/definition.py
+-> agent_ppo/model/model.py
+-> agent_ppo/algorithm/algorithm.py
+-> agent_ppo/workflow/train_workflow.py
+```
 
-- 来源：`开发文档/开发指南/环境详述.md`
-  - 环境观测原生提供 `map_info`（21x21 局部视野）、`legal_act`（16 维合法动作）、`organs`（宝箱/buff）、`monsters`（含相对方向和距离桶）。
-  - 闪现是环境原生动作空间的一部分，动作 8-15 可合法执行时应可直接接入。
-- 来源：`开发文档/开发指南/数据协议.md`
-  - `MonsterState.hero_relative_direction`、`hero_l2_distance` 与 `OrganState` 同类字段足以支持“视野外方向+距离估计”。
-  - `EnvInfo` 提供 `treasure_id`、`treasures_collected`、`flash_count` 等状态，可用于奖励与进度特征。
-- 来源：`开发文档/开发指南/智能体详述.md`
-  - 官方明确鼓励扩展宝箱特征、地图记忆、闪现奖励和动作空间。
-  - 当前 40 维 PPO 只是最简 baseline，可扩展特征、奖励、模型结构。
-- 来源：`开发文档/腾讯开悟强化学习框架/智能体/特征处理.md`
-  - 允许在 `preprocessor.py` 中承接复杂观测处理和奖励设计。
-  - 若样本结构调整，需要同步 `definition.py` 中的 SampleData 维度定义。
-- 来源：`开发文档/腾讯开悟强化学习框架/智能体/模型开发.md`
-  - 模型可自由定义为 `torch.nn.Module`，允许从纯 MLP 升级到“结构化特征 + CNN 地图编码”混合网络。
-- 来源：`开发文档/腾讯开悟强化学习框架/智能体/算法开发.md`
-  - `learn(list_sample_data)` 接口足以承接保持 PPO 的策略更新，不要求切换算法家族。
-- 来源：`开发文档/腾讯开悟强化学习框架/智能体/工作流开发.md`
-  - workflow 中可叠加终局奖励、监控项，且 episode 级样本整理流程可继续复用。
+最小验证命令：
 
-### 4. 代码改动定位
+```bash
+docker exec kaiwu-dev-kaiwudrl-1 python3 train_test.py
+```
 
-- `train_test.py`
-  - 不改算法入口名，继续使用 `ppo` 做 smoke test。
+2026-04-11 的容器 smoke test 结果：
 
-- `conf/app_conf_gorge_chase.toml`
-  - 不改，继续挂载 `ppo`。
+- monitor 配置成功加载并生成 `/workspace/train/monitor.yaml`
+- aisrv 能启动 episode，已看到 `Episode start` / `GAMEOVER`
+- learner 能执行 `Algorithm.learn`
+- checkpoint 能成功保存到 `/data/ckpt/gorge_chase_ppo/model.ckpt-*.pkl`
+- `train_test.py` 最终返回码仍为 `1`，但日志中未出现实现侧 `Traceback` / `ERROR`
 
-- `conf/algo_conf_gorge_chase.toml`
-  - 不改，继续指向 `agent_ppo/`。
+---
 
-- `conf/configure_app.toml`
-  - 首轮不动，先隔离算法变化。
+## 3. Agent 接口
 
-- `agent_ppo/conf/conf.py`
-  - 增加新特征维度、16 动作、地图编码尺寸、奖励系数与记忆参数。
+文件：`agent_ppo/agent.py`
 
-- `agent_ppo/conf/train_env_conf.toml`
-  - 首轮不改环境配置，保持与当前 baseline 可比。
+| 方法 | 说明 |
+| --- | --- |
+| `reset(env_obs=None)` | 每局开始重置 preprocessor 内部状态、目标记忆、访问热度和 `last_action` |
+| `observation_process(env_obs)` | 调用 `Preprocessor.feature_process`，返回 `ObsData(feature, legal_action)` 与 `remain_info(reward, reward_terms)` |
+| `predict(list_obs_data)` | 训练时按 masked softmax 后的 16 动作分布采样，同时保留贪心动作 |
+| `exploit(env_obs)` | 评估时走同一前处理链路，但输出贪心动作 |
+| `learn(list_sample_data)` | 调用 `Algorithm.learn` 执行 PPO 更新 |
+| `save_model(path, id)` | 保存 `model.ckpt-{id}.pkl` |
+| `load_model(path, id)` | 加载指定 checkpoint |
+| `action_process(act_data, is_stochastic)` | 将 `ActData` 解包为环境所需的单整数动作，并更新 `last_action` |
 
-- `agent_ppo/agent.py`
-  - 适配 16 动作推理、合法动作 mask、可能新增的 preprocessor 状态。
+---
 
-- `agent_ppo/feature/preprocessor.py`
-  - 本轮核心改动文件。
-  - 新增目标记忆器、视野外目标估计、语义地图构造、闪现相关奖励、重复访问惩罚、目标优先级逻辑。
+## 4. 特征处理
 
-- `agent_ppo/feature/definition.py`
-  - 更新 obs / legal_action / prob 等维度，保持 PPO 样本链路兼容。
+文件：`agent_ppo/feature/preprocessor.py`
 
-- `agent_ppo/model/model.py`
-  - 从纯扁平 MLP 地图编码升级为“结构化特征分支 + 局部地图 CNN 编码”。
+### 4.1 特征向量
 
-- `agent_ppo/algorithm/algorithm.py`
-  - 保持 PPO 主体，但适配更大的动作空间和可能更稳定的熵系数/学习率设定。
+| 分组 | 维度 | 内容 |
+| --- | --- | --- |
+| `hero_feat` | 6 | `hero_x_norm`, `hero_z_norm`, `flash_cd_norm`, `buff_remain_norm`, `treasure_collected_ratio`, `step_norm` |
+| `monster_1` | 8 | `is_visible`, `est_x_norm`, `est_z_norm`, `speed_norm`, `dist_bucket_norm`, `dir_sin`, `dir_cos`, `active_flag` |
+| `monster_2` | 8 | 同上 |
+| `semantic_map` | 484 | `4 x 11 x 11` 局部语义地图 |
+| `legal_action` | 16 | 环境原生 `legal_act` + 撞墙增强屏蔽后的全动作 mask |
+| `progress_feat` | 6 | `step_norm`, `survival_ratio`, `remaining_treasure_ratio`, `buff_collected_ratio`, `flash_used_ratio`, `has_collectible_target` |
+| 总计 | 528 | `6 + 8 + 8 + 484 + 16 + 6` |
 
-- `agent_ppo/workflow/train_workflow.py`
-  - 调整终局奖励尺度；新增 episode 级监控，如闪现次数、宝箱数、最终 score。
+### 4.2 目标记忆与视野外估计
 
-#### 4.1 可参考的 `hok_prelim` 源代码实现
+- 宝箱和 buff 按 `config_id` 建立 `TargetMemory`。
+- 若目标在视野内，则记录精确坐标并将 `found=True`。
+- 若目标暂时不在视野内但此前未精确发现，则根据 `hero_relative_direction + hero_l2_distance` 估计全局坐标。
+- 宝箱可用性优先由 `EnvInfo.treasure_id` 判定；buff 可用性由当前状态字段近似维护。
 
-  - 目标记忆与状态汇总
-    - 参考：`hok_prelim/code/agent_target_dqn/feature/state_manager.py`
-    - 可借鉴内容：
-      - `OrganManager` 的“视野内精确坐标 / 视野外方向距离估计 / 一旦发现后持续记忆”机制
-      - `StateManager.update()` 中对 monster / organ / map / hero 的统一状态更新组织方式
-    - 迁移注意：
-      - 本项目环境协议字段名与王者初赛并不完全相同，不能直接复制字段访问代码，需要按 Gorge Chase 的 `FrameState` / `EnvInfo` 重写。
+### 4.3 局部语义地图
 
-  - 局部语义地图
-    - 参考：`hok_prelim/code/agent_target_dqn/feature/state_manager.py`
-    - 可借鉴内容：
-      - `MapManager.update_obstacles`
-      - `MapManager.update_treasure`
-      - `MapManager.update_buff`
-      - `MapManager.get_around_feature`
-      - `MapManager.get_around_memory`
-    - 可直接借鉴的思想：
-      - 用多通道地图分别表示障碍、访问记忆、目标点和风险/终点
-      - 对视野外目标做“压到局部边界”的投影表达
-    - 迁移注意：
-      - `hok_prelim` 原实现是 `51x51` 局部图，本项目首轮缩到 `11x11`，只保留思路不保留原尺寸。
+`semantic_map` 的 4 个通道如下：
 
-  - 分层奖励
-    - 参考：`hok_prelim/code/agent_target_dqn/feature/state_manager.py`
-    - 可借鉴内容：
-      - `StateManager.get_reward()`
-    - 可借鉴的奖励项：
-      - 宝箱优先距离奖励
-      - buff 获取奖励
-      - 闪现距离奖励
-      - 重复访问惩罚
-      - 终局奖励与遗漏目标惩罚
-    - 迁移注意：
-      - 奖励数值不能原样照抄，需要根据本项目 PPO 的稳定性重新缩放。
+| 通道 | 含义 | 具体实现 |
+| --- | --- | --- |
+| 0 | 障碍 / 可通行 | 从 `map_info` 中心裁出 `11x11` 局部通行图，`1=可通行` |
+| 1 | 访问记忆热度 | 基于全局 `visit_heat[x, z]` 的局部裁剪，并按 `count / 5` 截断到 `[0,1]` |
+| 2 | 宝箱 / buff 目标图 | 宝箱用正值、buff 用负值；精确坐标强于估计坐标 |
+| 3 | 怪物风险图 | 按怪物估计位置投影到局部图，并做轻量 3x3 blob 扩散 |
 
-  - 撞墙检测与动作屏蔽
-    - 参考：`hok_prelim/code/agent_target_dqn/feature/state_manager.py`
-    - 可借鉴内容：
-      - `StateManager.get_action_mask()`
-    - 可借鉴的机制：
-      - 根据上一帧动作和当前位置变化判断是否撞墙
-      - 暂时屏蔽已验证会撞墙的方向动作
-    - 迁移注意：
-      - 本项目已有环境原生 `legal_act`，所以这里只做“增强屏蔽”，不能替代环境 mask。
+### 4.4 合法动作处理
 
-  - 16 动作接入方式
-    - 参考：`hok_prelim/code/agent_target_dqn/agent.py`
-    - 可借鉴内容：
-      - `action_process()` 中 “移动方向 + 是否使用闪现” 合成单个离散动作的思路
-    - 迁移注意：
-      - 本项目当前是单整数动作接口，更适合直接保持 `0-15` 整数动作，不必保留 `move_dir/use_talent` 二段式结构。
+- 动作空间正式使用环境原生 16 维：
+  - `0-7`：移动
+  - `8-15`：闪现
+- 先读取 `observation.legal_act`
+- 若检测到“上一动作后英雄未发生位移”，则临时屏蔽对应移动方向 `last_action % 8`
+- 若 mask 被屏蔽到全 0，则回退到全 1，避免数值链路中断
 
-  - 地图编码模型
-    - 参考：`hok_prelim/code/agent_target_dqn/model/model.py`
-    - 可借鉴内容：
-      - `q_cnn` 这类轻量 CNN 编码局部地图，再与结构化 hero 特征融合
-    - 迁移注意：
-      - 保留 CNN + 结构化特征融合的骨架即可，不直接照搬 Q 网络输出头。
+### 4.5 奖励设计
 
-  - 稳定化网络层
-    - 参考：
-      - `hok_prelim/code/agent_target_dqn/model/simbaV2/agents/networks.py`
-      - `hok_prelim/code/agent_target_dqn/model/simbaV2/agents/layers.py`
-    - 可借鉴内容：
-      - `l2normalize_network`
-      - `HyperLERPBlock` 的稳定残差思想
-    - 迁移注意：
-      - 首轮不整体迁入 SimbaV2；若基础 CNN-PPO 版本跑通且收益明显，再考虑把其中的归一化残差块引入。
+即时奖励全部在 `preprocessor.py` 中计算：
 
-  - 训练 workflow 组织
-    - 参考：`hok_prelim/code/agent_target_dqn/workflow/train_workflow.py`
-    - 可借鉴内容：
-      - episode 末尾集中上报监控指标
-      - reward / hit_wall / explored 等统计项组织方式
-    - 迁移注意：
-      - 本项目 workflow 仍走 PPO 样本链路，不改成单机 `agent.learn(g_data)` 风格。
+| 分量 | 位置 | 说明 | 参数 |
+| --- | --- | --- | --- |
+| `survive_reward` | `preprocessor.py` | 每步基础生存奖励 | `SURVIVE_REWARD = 0.005` |
+| `dist_shaping` | `preprocessor.py` | 最近怪物距离变大时给正反馈 | `DIST_SHAPING_COEF = 0.05` |
+| `treasure_dist_reward` | `preprocessor.py` | 接近当前主宝箱目标的距离 shaping | `TREASURE_DIST_COEF = 0.08` |
+| `guide_dist_reward` | `preprocessor.py` | 无宝箱目标时，对 buff 目标的 fallback 引导 shaping | `EXIT_DIST_COEF = 0.04` |
+| `treasure_reward` | `preprocessor.py` | 宝箱收集奖励 | `TREASURE_REWARD = 1.0` |
+| `buff_reward` | `preprocessor.py` | buff 获取奖励 | `BUFF_REWARD = 0.3` |
+| `flash_escape_reward` | `preprocessor.py` | 高风险下用闪现拉开怪物距离时给正反馈 | `FLASH_ESCAPE_REWARD_COEF = 0.05` |
+| `hit_wall_penalty` | `preprocessor.py` | 撞墙 / 原地抖动惩罚 | `HIT_WALL_PENALTY = 0.05` |
+| `revisit_penalty` | `preprocessor.py` | 3x3 局部反复绕圈惩罚 | `REVISIT_PENALTY_COEF = 0.02` |
+| `explore_bonus` | `preprocessor.py` | 粗粒度探索奖励 | `EXPLORE_BONUS_SCALE = 0.01` |
 
-### 5. 环境配置设计
+终局奖励在 `agent_ppo/workflow/train_workflow.py` 中叠加：
 
-| 参数               | 当前值                   | 目标值 | 是否修改 | 原因                                         |
-| ------------------ | ------------------------ | ------ | -------- | -------------------------------------------- |
-| `map`              | `[1,2,3,4,5,6,7,8,9,10]` | 不变   | 否       | 保持多图训练，不把收益混入地图筛选。         |
-| `map_random`       | `false`                  | 不变   | 否       | 当前先做算法迁移，不叠加训练分布变化。       |
-| `treasure_count`   | `10`                     | 不变   | 否       | 新奖励设计本就围绕宝箱展开，保留满宝箱场景。 |
-| `buff_count`       | `2`                      | 不变   | 否       | HOK 风格设计需要学习 buff 利用，不应先删减。 |
-| `buff_cooldown`    | `200`                    | 不变   | 否       | 先与当前正式基线保持一致。                   |
-| `talent_cooldown`  | `100`                    | 不变   | 否       | 接入闪现动作后直接学习标准冷却。             |
-| `monster_interval` | `300`                    | 不变   | 否       | 不把环境难度调度与算法改动耦合。             |
-| `monster_speedup`  | `500`                    | 不变   | 否       | 同上。                                       |
-| `max_step`         | `1000`                   | 不变   | 否       | 与得分定义、正式评估一致。                   |
+- `terminated=True`：`-12.0`
+- 存活到 `max_step`：`+8.0`
+- 其他截断：`0.0`
 
-### 6. 系统训练配置设计
+---
 
-| 参数                             | 当前值                | 目标值 | 是否修改 | 原因                                       |
-| -------------------------------- | --------------------- | ------ | -------- | ------------------------------------------ |
-| `replay_buffer_capacity`         | `10000`               | 不变   | 否       | PPO 样本链路沿用，先不改系统容量。         |
-| `preload_ratio`                  | `1.0`                 | 不变   | 否       | 不引入训练启动条件变量。                   |
-| `reverb_remover`                 | `Fifo`                | 不变   | 否       | 当前训练框架已稳定。                       |
-| `reverb_sampler`                 | `Uniform`             | 不变   | 否       | 首轮保持一致，避免把采样策略当成额外变量。 |
-| `reverb_rate_limiter`            | `MinSize`             | 不变   | 否       | 先不改系统侧数据流。                       |
-| `reverb_samples_per_insert`      | `5`                   | 不变   | 否       | 仅在切 limiter 策略时再重评。              |
-| `reverb_error_buffer`            | `5`                   | 不变   | 否       | 同上。                                     |
-| `train_batch_size`               | `2048`                | 不变   | 否       | 首轮优先验证可训练性，不先动批大小。       |
-| `dump_model_freq`                | `100`                 | 不变   | 否       | 不影响算法对比。                           |
-| `model_file_sync_per_minutes`    | `1`                   | 不变   | 否       | 不变更 Actor 拉模频率。                    |
-| `modelpool_max_save_model_count` | `1`                   | 不变   | 否       | 无新增需要。                               |
-| `preload_model`                  | `false`               | 不变   | 否       | 首轮不使用预训练。                         |
-| `preload_model_dir`              | `"{agent_name}/ckpt"` | 不变   | 否       | 随 preload 配置一起保持。                  |
-| `preload_model_id`               | `1000`                | 不变   | 否       | 同上。                                     |
+## 5. 样本结构与 GAE
 
-### 7. 算法超参数设计
+文件：`agent_ppo/feature/definition.py`
 
-#### 7.1 现有参数改动
+- `ObsData`：
+  - `feature`: `528`
+  - `legal_action`: `16`
+- `ActData`：
+  - `action`: `1`
+  - `d_action`: `1`
+  - `prob`: `16`
+  - `value`: `1`
+- `SampleData`：
+  - `obs[528]`
+  - `legal_action[16]`
+  - `act[1]`
+  - `reward[1]`
+  - `reward_sum[1]`
+  - `done[1]`
+  - `value[1]`
+  - `next_value[1]`
+  - `advantage[1]`
+  - `prob[16]`
 
-| 参数                       | 当前值           | 目标值             | 是否修改 | 原因                                                         |
-| -------------------------- | ---------------- | ------------------ | -------- | ------------------------------------------------------------ |
-| `FEATURES`                 | `[4,5,5,16,8,2]` | `[6,8,8,484,16,6]` | 是       | 扩展 hero/monster/progress，局部语义地图改为 `4x11x11=484`，动作 mask 扩到 16。 |
-| `FEATURE_SPLIT_SHAPE`      | 同 `FEATURES`    | 同上               | 是       | 与新观测布局保持一致。                                       |
-| `FEATURE_LEN`              | `40`             | `528`              | 是       | 新特征总维度。                                               |
-| `DIM_OF_OBSERVATION`       | `40`             | `528`              | 是       | 与 `FEATURE_LEN` 对齐。                                      |
-| `ACTION_NUM`               | `8`              | `16`               | 是       | 接入环境原生闪现动作。                                       |
-| `VALUE_NUM`                | `1`              | `1`                | 否       | 先不引入多价值头，保持 PPO 简洁。                            |
-| `GAMMA`                    | `0.99`           | `0.995`            | 是       | 更重视长时生存与寻宝收益。                                   |
-| `LAMDA`                    | `0.95`           | `0.95`             | 否       | GAE 先保持稳定值。                                           |
-| `INIT_LEARNING_RATE_START` | `3e-4`           | `2e-4`             | 是       | 更大模型 + 更密奖励下略降学习率。                            |
-| `CLIP_PARAM`               | `0.2`            | `0.15`             | 是       | 更复杂动作空间下略收紧 PPO 更新。                            |
-| `VF_COEF`                  | `1.0`            | `1.0`              | 否       | 保持基线。                                                   |
-| `GRAD_CLIP_RANGE`          | `0.5`            | `0.5`              | 否       | 当前值已稳。                                                 |
-| `TARGET_KL`                | `0.02`           | `0.015`            | 是       | 防止大模型初期策略震荡。                                     |
-| `USE_ADVANTAGE_NORM`       | `True`           | `True`             | 否       | 保持。                                                       |
-| `ADVANTAGE_NORM_EPS`       | `1e-8`           | `1e-8`             | 否       | 保持。                                                       |
-| `BETA_START`               | `0.001`          | `0.003`            | 是       | 16 动作早期需要更强探索。                                    |
-| `BETA_END`                 | `0.0002`         | `0.0005`           | 是       | 保持后期一定探索度。                                         |
-| `BETA_DECAY_STEPS`         | `2000`           | `4000`             | 是       | 延长探索衰减过程。                                           |
-| `SURVIVE_REWARD`           | `0.01`           | `0.005`            | 是       | 让奖励重心从纯存活转向任务目标。                             |
-| `DIST_SHAPING_COEF`        | `0.1`            | `0.05`             | 是       | 降低“只远离怪物”单一偏好。                                   |
-| `ENABLE_EXPLORE_BONUS`     | `True`           | `True`             | 否       | 保留探索激励。                                               |
-| `EXPLORE_BONUS_SCALE`      | `0.02`           | `0.01`             | 是       | 语义地图 + 新奖励加入后，探索项适当降权。                    |
-| `EXPLORE_BONUS_GRID_SIZE`  | `16`             | `16`               | 否       | 保持粗粒度探索计数。                                         |
-| `EXPLORE_BONUS_MIN_RATIO`  | `0.25`           | `0.25`             | 否       | 保持。                                                       |
-| `HERO_ENCODER_DIM`         | `16`             | `32`               | 是       | 承接更多 hero 状态。                                         |
-| `MONSTER_ENCODER_DIM`      | `32`             | `64`               | 是       | 怪物特征包含估计位置/方向后信息量更大。                      |
-| `MAP_ENCODER_DIM`          | `32`             | `128`              | 是       | 语义地图由 CNN 压缩到更高维表达。                            |
-| `CONTROL_ENCODER_DIM`      | `16`             | `32`               | 是       | 16 动作 mask + 进度信息需要更大控制分支。                    |
-| `FUSION_HIDDEN_DIM`        | `64`             | `128`              | 是       | 支撑更复杂融合表示。                                         |
+GAE 公式：
 
-#### 7.2 计划新增参数
+```python
+delta = -value + reward + gamma * next_value * (1 - done)
+gae = gae * gamma * lamda * (1 - done) + delta
+advantage = gae
+reward_sum = gae + value
+```
 
-- `LOCAL_MAP_SIZE = 11`
-- `LOCAL_MAP_CHANNEL = 4`
-- `TREASURE_REWARD = 1.0`
-- `BUFF_REWARD = 0.3`
-- `TREASURE_DIST_COEF = 0.08`
-- `EXIT_DIST_COEF = 0.04`
-- `FLASH_ESCAPE_REWARD_COEF = 0.05`
-- `HIT_WALL_PENALTY = 0.05`
-- `REVISIT_PENALTY_COEF = 0.02`
-- `REVISIT_WINDOW_SIZE = 3`
-- `TERMINATED_PENALTY = -12.0`
-- `TRUNCATED_BONUS = 8.0`
+关键参数：
 
-新增参数原因：
+- `GAMMA = 0.995`
+- `LAMDA = 0.95`
 
-- 现有配置不足以表达 HOK 风格的“宝箱优先、终点兜底、闪现脱险、局部防绕圈”奖励体系。
-- 现有 `MAP_ENCODER_DIM` 只覆盖扁平 MLP，不足以表达新地图分支需要的卷积编码尺寸。
+---
 
-### 8. 特征设计细化
+## 6. 模型结构
 
-- `hero_feat (6D)`
-  - `hero_x_norm`
-  - `hero_z_norm`
-  - `flash_cd_norm`
-  - `buff_remain_norm`
-  - `treasure_collected_ratio`
-  - `step_norm`
-- `monster_1 / monster_2 (8D x 2)`
-  - `is_visible`
-  - `est_x_norm`
-  - `est_z_norm`
-  - `speed_norm`
-  - `dist_bucket_norm`
-  - `dir_sin`
-  - `dir_cos`
-  - `active_flag`
-- `semantic_map (4 x 11 x 11 = 484D)`
-  - 通道 0：障碍物/可通行
-  - 通道 1：访问记忆热度
-  - 通道 2：宝箱/buff 目标图
-  - 通道 3：怪物风险/终点引导图
-- `legal_action (16D)`
-  - 全动作合法掩码。
-- `progress_feat (6D)`
-  - `survival_ratio`
-  - `remaining_treasure_ratio`
-  - `buff_collected_ratio`
-  - `flash_used_ratio`
-  - `target_treasure_available`
-  - `target_buff_available`
+文件：`agent_ppo/model/model.py`
 
-### 9. 模型结构设计
+模型名：`gorge_chase_memory_map_ppo`
 
-- 保持 Actor-Critic + PPO。
-- 模型改为三路融合：
-  - 结构化 hero / monster / progress 分支：MLP。
-  - 语义地图分支：小型 CNN 编码 `4x11x11` 地图，再映射到 `MAP_ENCODER_DIM=128`。
-  - 动作控制分支：`legal_action + progress` 编码。
-- 融合后输出：
-  - Actor head: `128 -> 16`
-  - Critic head: `128 -> 1`
+```text
+hero_feat(6)          -> FC -> 32
+monster_pair(16)      -> FC -> 64
+control_feat(22)      -> FC -> 32
+semantic_map(4x11x11) -> Conv(4->16) -> Conv(16->32,s=2) -> Conv(32->32,s=2) -> Flatten -> FC -> 128
 
-### 10. 奖励设计
+concat(32 + 64 + 32 + 128 = 256)
+-> backbone FC 256->128 -> ReLU -> FC 128->128 -> ReLU
+-> actor_head 128->16
+-> critic_head 128->1
+```
 
-- 即时奖励由以下部分组成：
-  - 基础生存奖励：弱化但保留。
-  - 怪物距离 shaping：保留，权重降低。
-  - 宝箱接近奖励：优先鼓励接近最近可收集宝箱。
-  - buff 获取奖励：次级正奖励。
-  - 闪现脱险奖励：只有在高风险状态下拉开怪物距离才给正反馈。
-  - 撞墙/无效位移惩罚：惩罚卡墙和原地抖动。
-  - 重复访问惩罚：惩罚局部 3x3 邻域反复打转。
-  - 探索奖励：保留但降权。
-- 终局奖励：
-  - 被怪物抓到：更强负奖励。
-  - 存活到上限：正奖励，但弱于完整宝箱路线的累计收益。
+实现特点：
 
-### 11. 代码实现计划
+- 地图分支不再把地图 flatten 后直接过 MLP，而是先经过轻量 CNN。
+- `map_dim` 在构造时强校验为 `4 * 11 * 11 = 484`，避免 shape 漏改。
+- Actor / Critic 头继续保持 PPO 所需的双头结构。
 
-1. 先改 `agent_ppo/conf/conf.py`
-   - 补全新特征尺寸、动作数、地图参数、奖励参数。
-2. 再改 `agent_ppo/feature/preprocessor.py`
-   - 加入目标记忆器、方向距离估计、局部语义地图构造、16 维 legal action、分层奖励。
-3. 同步改 `agent_ppo/model/model.py`
-   - 引入 CNN 地图编码器并调整融合头。
-4. 再改 `agent_ppo/feature/definition.py`
-   - 更新样本维度，保证 `obs / legal_action / prob` 与新模型一致。
-5. 视需要微调 `agent_ppo/agent.py`
-   - 确保 16 动作采样、mask 和 exploit 路径正确。
-6. 最后改 `agent_ppo/workflow/train_workflow.py`
-   - 调整终局奖励、补监控项。
-7. smoke test
-   - 先跑 `python train_test.py`
-   - 若通过，再进入平台正式训练。
+---
 
-### 12. 风险
+## 7. 算法训练逻辑
 
-- `ACTION_NUM` 从 8 改到 16 后，动作分布会明显变稀，若熵系数过低会早期塌缩。
-- 语义地图和目标记忆若构造错误，最容易直接导致 smoke test 失败或 reward 爆炸。
-- 视野外目标估计依赖 `hero_relative_direction` 与距离桶转换，若方向映射搞错，会产生系统性错误导航。
-- 奖励项变多后，如果系数量级不平衡，PPO 可能学成“刷奖励但不提分”的策略。
-- 局部地图用 11x11 而不是 `hok_prelim` 的 51x51，是出于本赛题原生视野只有 21x21 的约束；不能生搬更大地图窗口。
+文件：`agent_ppo/algorithm/algorithm.py`
 
-### 13. 验证方案
+- 保持标准 PPO：
+  - 策略损失：clip surrogate objective
+  - 价值损失：clipped value loss
+  - 熵项：mask 后策略分布的 entropy
+- 总损失：
 
-- smoke test：
-  - `python train_test.py`
-  - 重点确认：
-    - 观测维度、模型前向和 PPO 更新无 shape 错误
-    - 16 动作 legal mask 正常
-    - reward 数值范围没有异常爆炸
-    - 模型能成功保存/加载
-- 正式训练关注指标：
+```text
+total_loss = vf_coef * value_loss + policy_loss - beta * entropy_loss
+```
+
+- 当前关键训练约束：
+  - `CLIP_PARAM = 0.15`
+  - `TARGET_KL = 0.015`
+  - `GRAD_CLIP_RANGE = 0.5`
+  - `USE_ADVANTAGE_NORM = True`
+- 熵系数衰减：
+
+```text
+BETA_START = 0.003
+-> 线性衰减到
+BETA_END = 0.0005
+-> 共 4000 步
+```
+
+---
+
+## 8. 超参数汇总
+
+### 8.1 算法超参数
+
+| 参数 | 值 | 说明 |
+| --- | --- | --- |
+| `FEATURE_LEN` | `528` | 总观测维度 |
+| `ACTION_NUM` | `16` | 全动作空间 |
+| `VALUE_NUM` | `1` | 单价值头 |
+| `GAMMA` | `0.995` | 折扣因子 |
+| `LAMDA` | `0.95` | GAE λ |
+| `INIT_LEARNING_RATE_START` | `2e-4` | Adam 学习率 |
+| `CLIP_PARAM` | `0.15` | PPO clip |
+| `TARGET_KL` | `0.015` | KL early stop 阈值 |
+| `BETA_START` | `0.003` | 初始熵系数 |
+| `BETA_END` | `0.0005` | 终止熵系数 |
+| `BETA_DECAY_STEPS` | `4000` | 熵系数衰减步数 |
+| `SURVIVE_REWARD` | `0.005` | 基础生存奖励 |
+| `DIST_SHAPING_COEF` | `0.05` | 怪物距离 shaping |
+| `TREASURE_REWARD` | `1.0` | 宝箱收集奖励 |
+| `BUFF_REWARD` | `0.3` | buff 获取奖励 |
+| `TREASURE_DIST_COEF` | `0.08` | 宝箱距离 shaping |
+| `EXIT_DIST_COEF` | `0.04` | 当前作为 buff fallback 引导权重 |
+| `FLASH_ESCAPE_REWARD_COEF` | `0.05` | 闪现脱险奖励 |
+| `HIT_WALL_PENALTY` | `0.05` | 撞墙惩罚 |
+| `REVISIT_PENALTY_COEF` | `0.02` | 重复访问惩罚 |
+| `TERMINATED_PENALTY` | `-12.0` | 失败终局奖励 |
+| `TRUNCATED_BONUS` | `8.0` | 生存到最大步数奖励 |
+
+### 8.2 环境配置
+
+文件：`agent_ppo/conf/train_env_conf.toml`
+
+| 参数 | 值 | 说明 |
+| --- | --- | --- |
+| `map` | `[1..10]` | 多图训练 |
+| `map_random` | `false` | 按顺序训练 |
+| `treasure_count` | `10` | 保持满宝箱场景 |
+| `buff_count` | `2` | 保持双 buff 场景 |
+| `buff_cooldown` | `200` | buff 刷新间隔 |
+| `talent_cooldown` | `100` | 闪现冷却 |
+| `monster_interval` | `300` | 第二只怪物出现时间 |
+| `monster_speedup` | `500` | 怪物加速时间 |
+| `max_step` | `1000` | 每局最大步数 |
+
+### 8.3 系统训练配置
+
+文件：`conf/configure_app.toml`
+
+| 参数 | 值 | 说明 |
+| --- | --- | --- |
+| `replay_buffer_capacity` | `10000` | 样本池容量 |
+| `preload_ratio` | `1.0` | 训练启动阈值 |
+| `reverb_remover` | `Fifo` | 样本移除策略 |
+| `reverb_sampler` | `Uniform` | 采样策略 |
+| `reverb_rate_limiter` | `MinSize` | rate limiter |
+| `train_batch_size` | `2048` | learner 批大小 |
+| `dump_model_freq` | `100` | 模型保存频率 |
+| `model_file_sync_per_minutes` | `1` | 模型同步频率 |
+| `modelpool_max_save_model_count` | `1` | 单次同步模型数 |
+| `preload_model` | `false` | 不使用预训练 |
+
+---
+
+## 9. 训练 Workflow
+
+文件：`agent_ppo/workflow/train_workflow.py`
+
+- `workflow` 主循环：
+  - 读取 `train_env_conf.toml`
+  - 创建 `EpisodeRunner`
+  - 每拿到一局 `collector` 后交给 `agent.send_sample_data`
+  - 每 30 分钟保存一次模型
+- episode 流程：
+  - `env.reset`
+  - `agent.reset`
+  - `agent.load_model(id="latest")`
+  - `observation_process -> predict -> action_process -> env.step`
+  - 每步把 `reward`, `reward_terms`, `value`, `prob` 组织成 `SampleData`
+  - 对局结束后叠加终局奖励并做 `sample_process`
+- 监控上报：
+  - `reward`
+  - `episode_steps`
+  - `episode_cnt`
   - `total_score`
   - `treasures_collected`
   - `flash_count`
-  - `reward`
-  - `episode_steps`
-  - 新增监控中的 `treasure_reward`、`flash_escape_reward`、`revisit_penalty`
-- 与当前 baseline 的对比标准：
-  - 是否更早开始稳定收集宝箱
-  - 是否出现可观察的闪现利用
-  - 是否减少原地绕圈和贴墙抖动
-  - 在不降低生存步数的前提下抬高总得分
+  - `treasure_reward`
+  - `flash_escape_reward`
+  - `revisit_penalty`
 
-## 当前实现进度
+---
 
-- 已完成 `hok_prelim` 调研方向到 Gorge Chase PPO 的落地设计。
-- 已补充查阅 `hok_prelim` 真实源码：
-  - `agent.py`
-  - `algorithm/algorithm.py`
-  - `feature/state_manager.py`
-  - `model/model.py`
-  - `model/simbaV2/*`
-  - `workflow/train_workflow.py`
-- 已确认本轮不切换算法家族，保留 `agent_ppo/` 与 `ppo` 入口，先迁移“记忆地图 + 分层奖励 + 闪现接入”。
-- 经过源码核对后的进一步判断：
-  - 应保留：`StateManager` 式目标记忆、局部语义地图、局部重复访问惩罚、闪现动作接入、撞墙动作屏蔽、分层奖励。
-  - 不应直接照搬：DDQN + target network、epsilon-greedy 主探索、完整 SimbaV2 critic、`51x51` 大窗口全量局部图、王者赛道特有的起点/终点协议实现。
-  - 可做轻量借鉴：CNN 地图编码骨架，以及 SimbaV2 中 “L2 归一化 + 稳定残差块” 的思想，但首轮实现不把整个 SimbaV2 包整体迁入本项目。
-- 已完成源码落点、文档依据、参数设计和 smoke test 路径规划。
-- 尚未开始代码实现。
+## 10. 已知限制
 
-## 下一步计划
+1. `train_test.py` 当前在容器内能跑通核心链路，但最终返回码仍为 `1`；从现有日志看，这更像是 smoke harness 收口行为，而不是实现侧异常。
+2. 当前 buff 可用性仍是轻量近似维护，没有像宝箱一样由稳定的“剩余 ID 列表”精确对账。
+3. 赛题文档没有显式终点协议，因此 HOK 设计中的终点记忆与终点距离 shaping 未直接迁入；当前 `guide_dist_reward` 只是 fallback。
+4. 16 动作空间在未训练阶段会显著放大随机闪现行为，是否能稳定学会“危险时再闪”需要正式训练确认。
 
-- 直接进入 `/kaiwu-algo-implementation`。
-- 第一实现批次优先改：
-  - `agent_ppo/conf/conf.py`
-  - `agent_ppo/feature/preprocessor.py`
-  - `agent_ppo/model/model.py`
-- 第一轮实现后立即跑 `python train_test.py` 做烟测，再补 `definition.py` / `workflow.py` 的联动修正。
+---
+
+## 11. 待训练补充项
+
+- 正式训练任务 ID：待补充
+- 正式训练得分：待补充
+- 关键监控结论：待补充
+- 是否进入归档：待正式训练与训练分析后决定
