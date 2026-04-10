@@ -1,0 +1,463 @@
+{
+  "obs": {
+    "frame_state": {
+      "heroes": [
+        {
+          "hero_id": 1112,
+          "pos": {
+            "x": 24,
+            "z": 87
+          },
+          "talent": {
+            "talent_type": 1,
+            "status": 1,
+            "cooldown": 0
+          },
+          "speed_up": 0,
+          "buff_remain_time": 0
+        }
+      ],
+      "organs": [
+        {
+          "sub_type": 1,
+          "config_id": 1,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Small"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 2,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Medium"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 3,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VeryLarge"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 4,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Large"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 5,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VeryLarge"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 6,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "SouthEast",
+            "l2_distance": "VerySmall"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 7,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "NorthEast",
+            "l2_distance": "Small"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 8,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "South",
+            "l2_distance": "Medium"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 2,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Medium"
+          },
+          "config_id": 0,
+          "cooldown": 0
+        },
+        {
+          "sub_type": 3,
+          "config_id": 21,
+          "status": 1,
+          "pos": {
+            "x": 24,
+            "z": 87
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VerySmall"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 4,
+          "config_id": 22,
+          "status": -1,
+          "pos": {
+            "x": -1,
+            "z": -1
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VeryLarge"
+          },
+          "cooldown": 0
+        }
+      ],
+      "step_no": 0
+    },
+    "score_info": {
+      "total_score": 199.0,
+      "score": 0.0,
+      "step_no": 0,
+      "treasure_collected_count": 0,
+      "treasure_score": 0,
+      "buff_count": 0,
+      "talent_count": 0
+    },
+    "map_info": [
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      },
+      {
+        "values": "type=int64, shape=(11,)"
+      }
+    ],
+    "legal_act": "type=int64, shape=(2,)"
+  },
+  "extra_info": {
+    "result_message": "ok",
+    "frame_state": {
+      "heroes": [
+        {
+          "hero_id": 1112,
+          "pos": {
+            "x": 24,
+            "z": 87
+          },
+          "talent": {
+            "talent_type": 1,
+            "status": 1,
+            "cooldown": 0
+          },
+          "speed_up": 0,
+          "buff_remain_time": 0
+        }
+      ],
+      "organs": [
+        {
+          "sub_type": 1,
+          "config_id": 1,
+          "status": 1,
+          "pos": {
+            "x": 54,
+            "z": 77
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Small"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 2,
+          "status": 1,
+          "pos": {
+            "x": 66,
+            "z": 101
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Medium"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 3,
+          "status": 1,
+          "pos": {
+            "x": 110,
+            "z": 110
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VeryLarge"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 4,
+          "status": 1,
+          "pos": {
+            "x": 84,
+            "z": 85
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Large"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 5,
+          "status": 1,
+          "pos": {
+            "x": 118,
+            "z": 92
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VeryLarge"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 6,
+          "status": 1,
+          "pos": {
+            "x": 31,
+            "z": 74
+          },
+          "relative_pos": {
+            "direction": "SouthEast",
+            "l2_distance": "VerySmall"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 7,
+          "status": 1,
+          "pos": {
+            "x": 56,
+            "z": 102
+          },
+          "relative_pos": {
+            "direction": "NorthEast",
+            "l2_distance": "Small"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 1,
+          "config_id": 8,
+          "status": 1,
+          "pos": {
+            "x": 40,
+            "z": 30
+          },
+          "relative_pos": {
+            "direction": "South",
+            "l2_distance": "Medium"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 2,
+          "status": 1,
+          "pos": {
+            "x": 66,
+            "z": 84
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "Medium"
+          },
+          "config_id": 0,
+          "cooldown": 0
+        },
+        {
+          "sub_type": 3,
+          "config_id": 21,
+          "status": 1,
+          "pos": {
+            "x": 24,
+            "z": 87
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VerySmall"
+          },
+          "cooldown": 0
+        },
+        {
+          "sub_type": 4,
+          "config_id": 22,
+          "status": 1,
+          "pos": {
+            "x": 104,
+            "z": 57
+          },
+          "relative_pos": {
+            "direction": "East",
+            "l2_distance": "VeryLarge"
+          },
+          "cooldown": 0
+        }
+      ],
+      "step_no": 0
+    },
+    "game_info": {
+      "total_score": 199.8,
+      "pos": {
+        "x": 24,
+        "z": 87
+      },
+      "start_pos": {
+        "x": 24,
+        "z": 87
+      },
+      "end_pos": {
+        "x": 104,
+        "z": 57
+      },
+      "treasure_count": 10,
+      "buff_duration": 51,
+      "map_info": [
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        },
+        {
+          "values": "type=int64, shape=(11,)"
+        }
+      ],
+      "obstacle_id": "type=int64, shape=(1,)",
+      "score": 0.0,
+      "step_no": 0,
+      "treasure_collected_count": 0,
+      "treasure_score": 0,
+      "buff_count": 0,
+      "talent_count": 0,
+      "buff_remain_time": 0
+    },
+    "result_code": 0
+  }
+}
