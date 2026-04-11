@@ -130,6 +130,7 @@ git checkout -b feature/<topic>
 - 只归档已验证的稳定信息
     
 - 训练结果必须来自真实平台
+- `GLOBAL_DOCS/算法总表.md` 中必须始终保持且仅保持一个“当前基线”；若本轮归档的是当前稳定主线版本，归档时必须把该版本提升为“当前基线”，并将旧基线降级为历史基线或已归档版本
     
 
 ---
@@ -197,6 +198,7 @@ git checkout -b feature/<topic>
 - 训练完成后必须单独做人主导的训练结果整理与官网评估，不直接把训练结果混入实现过程
     
 - `/kaiwu-memory-archive` 是最终收口步骤，负责归档、重置 `NOW.md`、commit、push 和 merge 指引
+- `/kaiwu-memory-archive` 在更新 `GLOBAL_DOCS/算法总表.md` 时，必须显式判断“当前基线”是否需要切换；若当前源码主线已经演进到新版本，不得继续保留旧版本为“当前基线”
     
 - 不自动 push，所有 push 需用户确认后执行
     
