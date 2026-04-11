@@ -46,7 +46,7 @@
 2. [README.md](README.md)
 3. [KAIWU-WORKFLOW.md](KAIWU-WORKFLOW.md)
 4. [GLOBAL_DOCS/算法总表.md](GLOBAL_DOCS/算法总表.md)
-5. [GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md](GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md)
+5. [GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md](GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md)
 6. [开发文档/README.md](开发文档/README.md)
 7. [CONTRIBUTE.md](CONTRIBUTE.md)
 
@@ -132,6 +132,10 @@ train_test.py
 - 做外部调研，决定要不要尝试新方向
 - 决定是否继续当前方向，还是切换方向
 - 启动平台真实训练，观察监控和日志
+- 从官方训练监控截图并放入对应算法文档目录的 `screenshots/`
+- 在官网上传模型，命名严格遵循 `算法完整名 + 训练步数`，建议写成 `<算法完整名>_<训练步数>`
+- 对开放 10 张地图执行 5 次官方评估
+- 记录 5 次评估里的 10 张地图得分，并把最终结果截图放入同一个 `screenshots/` 目录
 - 记录正式实验结果
 - 最终决定是否 commit、push、merge
 
@@ -142,7 +146,7 @@ train_test.py
 - 完成代码修改
 - 跑最小验证，比如 `python3 train_test.py`
 - 把当前状态同步到 `DEV_MEMORY/NOW.md`
-- 在结论稳定后整理到 `GLOBAL_DOCS/算法总表.md` 与 `GLOBAL_DOCS/算法文档/*`
+- 基于人提供的真实训练结果、10 张地图得分和截图，在结论稳定后整理到 `GLOBAL_DOCS/算法总表.md` 与 `GLOBAL_DOCS/算法文档/*`
 - 生成 commit 建议、整理变更说明
 
 ### 4.3 边界要说清
@@ -236,7 +240,7 @@ README.md
 KAIWU-WORKFLOW.md
 人类开发者AI协作指南.md
 GLOBAL_DOCS/算法总表.md
-GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md
+GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md
 开发文档/README.md
 DEV_MEMORY/NOW.md
 
@@ -272,13 +276,17 @@ DEV_MEMORY/NOW.md
 2. 地图/配置：
 3. 关键监控指标：
 4. 最终表现：
-5. 观察到的问题：
+5. 官网评估模型名（算法完整名 + 训练步数）：
+6. 5 次官方评估的 10 张地图得分：
+7. 训练监控截图 / 最终评估结果截图位置：
+8. 观察到的问题：
 
 请你基于这些结果：
 1. 更新当前算法文档
 2. 更新 GLOBAL_DOCS/算法总表.md 中的训练状态
-3. 给出下一轮迭代建议
-4. 如有必要，同步 GLOBAL_DOCS/算法总表.md 和正式算法文档
+3. 在正式算法文档里补充官方评估的 10 张地图得分与截图索引
+4. 给出下一轮迭代建议
+5. 如有必要，同步 GLOBAL_DOCS/算法总表.md 和正式算法文档
 ```
 
 ---
@@ -378,6 +386,8 @@ git push origin feature/<topic>
 
 ### 7.4 commit 规范
 
+**语言要求：所有 commit message 必须使用中文**。
+
 小步 commit 适用场景：
 
 - 单个问题修复
@@ -385,12 +395,25 @@ git push origin feature/<topic>
 - 阶段性文档同步
 - 算法实现中的一个可独立验证步骤
 
-小步 commit 至少要写清：
+小步 commit 格式：
+```
+<type>(<scope>): <简短描述>
 
-- 改动目的
-- 改动文件
-- 关键接口或配置变化
-- 最小验证状态
+- 改动目的：<为什么改>
+- 改动文件：<改了哪些文件>
+- 关键接口或配置变化：<如有>
+- 最小验证状态：<通过 / 失败>
+```
+
+示例：
+```bash
+git commit -m “feat(preprocessor): 添加宝箱距离奖励
+
+- 改动目的：优化奖励 shaping，鼓励智能体主动收集宝箱
+- 改动文件：agent_ppo/feature/preprocessor.py
+- 关键接口或配置变化：新增 TREASURE_DIST_COEF 参数
+- 最小验证状态：通过”
+```
 
 完整算法 commit 适用场景：
 
@@ -398,19 +421,32 @@ git push origin feature/<topic>
 - 当前阶段算法文档、算法总表已同步
 - 最小验证已通过
 
-完整算法 commit 至少要写清：
+完整算法 commit 格式：
+```
+feat(<scope>): <算法完整名>
 
-- 实现或完成的算法
-- 本轮算法完整名
-- 关键超参数设计
-- 当前可确认的训练得分或验证状态
-- 对应算法文档路径
-- 对应的全局 / 当前轮次文档同步情况
+- 实现内容：<本轮完成的全部功能>
+- 关键超参数设计：<核心参数取值>
+- 当前可确认的训练得分或验证状态：<具体得分或验证状态>
+- 对应算法文档路径：<文档位置>
+- 对应的全局 / 当前轮次文档同步情况：<已同步 / 待同步>
+```
+
+示例：
+```bash
+git commit -m “feat(ppo): agent_ppo_20260410_hok_memory_map_v1
+
+- 实现内容：接入 HOK 风格记忆地图、16 维动作空间、分层奖励设计
+- 关键超参数设计：GAMMA=0.995, CLIP_PARAM=0.15, MAP_ENCODER_DIM=128
+- 当前可确认的训练得分或验证状态：仅完成 smoke 验证，暂无正式训练得分
+- 对应算法文档路径：GLOBAL_DOCS/算法文档/agent_ppo_20260410_hok_memory_map_v1/README.md
+- 对应的全局 / 当前轮次文档同步情况：已同步”
+```
 
 关于训练得分：
 
 - 有真实结果时，写真实结果
-- 没有正式训练结果时，明确写“暂无正式训练得分”或“仅完成 smoke 验证”
+- 没有正式训练结果时，明确写”暂无正式训练得分”或”仅完成 smoke 验证”
 - 不允许为了让提交更完整而编造结果
 
 ### 7.5 完整改动的收口标准
@@ -455,7 +491,7 @@ git push origin feature/<topic>
 - 优先小步提交，避免一次性混入多个方向
 - 实现过程中持续维护 `DEV_MEMORY/NOW.md`
 - 归档时只整理稳定算法信息，不再向 `GLOBAL_DOCS` 追加过程型记忆文件
-- 正式算法文档统一使用 `算法名_时间.md` 命名，并在算法总表中保留最新路径
+- 正式算法文档统一使用 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 作为入口，并在同目录 `screenshots/` 存放官方训练监控截图与官方评估结果截图
 
 ---
 
@@ -523,18 +559,23 @@ AI 负责：
 - 说明 smoke test 是否通过
 - 如果失败，定位原因并修复
 
-### Stage 5：真实训练
+### Stage 5：真实训练、官网评估与截图准备
 
 人负责：
 
 - 在平台或正式环境启动训练
 - 观察监控、日志、得分
+- 从官方训练监控截图并放入对应算法文档目录的 `screenshots/`
+- 在官网上传模型，名称严格遵循 `算法完整名 + 训练步数`，建议写成 `<算法完整名>_<训练步数>`
+- 对开放 10 张地图执行 5 次官方评估
+- 记录 5 次评估中的 10 张地图得分
+- 将最终评估结果截图放入同一个 `screenshots/` 目录
 - 记录真实实验结果
 
 AI 负责：
 
 - 给出训练前检查清单
-- 帮你整理监控指标和日志
+- 基于你提供的真实训练结果、10 张地图得分和截图整理文档素材
 - 基于结果提出下一轮建议
 
 ### Stage 6：文档同步
@@ -547,6 +588,8 @@ AI 负责：
 
 - 当前轮次信息写入 `DEV_MEMORY/NOW.md`
 - 稳定结论整理进 `GLOBAL_DOCS/算法总表.md` 与 `GLOBAL_DOCS/算法文档/*`
+- 在正式算法文档里补充官方训练监控截图索引
+- 在正式算法文档里补充官网评估的模型命名、5 次评估记录、10 张地图得分和最终结果截图索引
 - 必要时更新正式算法文档和算法总表
 
 ### Stage 7：Git 收口
@@ -604,8 +647,9 @@ AI 负责：
 7. 跑 `python3 train_test.py`
 8. 让 AI 更新 `DEV_MEMORY/NOW.md`
 9. 人跑正式训练
-10. 让 AI 基于真实结果更新 `GLOBAL_DOCS/算法总表.md` 和正式算法文档
-11. 人确认后再 commit / push / merge
+10. 人先从官方训练监控截图，并按 `算法完整名 + 训练步数` 上传模型做 5 次官方评估，把最终结果截图也放入 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`
+11. 再让 AI 基于真实结果、10 张地图得分和截图更新 `GLOBAL_DOCS/算法总表.md` 和正式算法文档
+12. 人确认后再 commit / push / merge
 
 这就是这个仓库里“人做决策，AI 做实现与整理”的标准协作闭环。
 
@@ -616,7 +660,7 @@ AI 负责：
 当前推荐的完整工作流是：
 
 ```text
-算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练分析 -> 信息归档 -> 结束
+算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练结果整理 -> 信息归档 -> 结束
 ```
 
 需要额外强调的规则：
@@ -625,6 +669,7 @@ AI 负责：
 2. `/kaiwu-algo-design` 不能只写抽象方案，必须结合开发文档补齐环境配置和超参数。
 3. `/kaiwu-algo-implementation` 必须先理解源码和改动文件落点，再进行实现；实现的最后一步是把 `NOW.md` 整理成正式算法文档初稿。
 4. `/kaiwu-memory-archive` 是开发流程的最后一步，负责正式归档、重置 `NOW.md`、完成最终 `commit`、`push`，并指导用户发起 merge。
+5. 训练结果整理由人主导完成：官方训练监控截图和最终评估结果截图都由人手动放入 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`；官网上传模型时名称严格遵循 `算法完整名 + 训练步数`，并对开放 10 图完成 5 次官方评估；AI 不再依赖仓库内训练分析 skill / 脚本。
 
 推荐的 skill 顺序：
 
@@ -632,7 +677,6 @@ AI 负责：
 /kaiwu-dev-init
 /kaiwu-algo-design
 /kaiwu-algo-implementation
-/kaiwu-train-analysis
 /kaiwu-memory-archive
 ```
 
@@ -649,7 +693,7 @@ AI 负责：
 3. 正式实现只改 agent_ppo/，不要把正式改动放到 agent_diy/
 4. 改完后运行 python3 train_test.py 做 smoke test
 5. 同步 DEV_MEMORY/NOW.md
-6. 实现收尾时，把 NOW.md 整理成 GLOBAL_DOCS/算法文档/<算法完整名>.md 的初稿，内容包含除训练结果外的全部内容
+6. 实现收尾时，把 NOW.md 整理成 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 的初稿，并预留 `screenshots/` 目录给人工放训练监控截图和官方评估结果截图
 7. 暂时不要 push
 ```
 

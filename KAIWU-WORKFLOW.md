@@ -7,7 +7,7 @@
 完整工作流固定为：
 
 ```text
-算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练分析 -> 信息归档 -> 结束
+算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练结果整理 -> 信息归档 -> 结束
 ````
 
 其中：
@@ -22,7 +22,7 @@
     
 - **算法训练**：由人发起平台真实训练
     
-- **训练分析**：基于真实训练结果、日志和监控做判断
+- **训练结果整理**：由人查看官方训练监控、按 `算法完整名 + 训练步数` 上传模型做 5 次官网评估、截图归档，并整理真实训练结论与 10 张地图得分
     
 - **信息归档**：把稳定结论写入正式算法文档和算法总表，并完成 Git 收口
     
@@ -47,7 +47,7 @@ git checkout -b feature/<topic>
 
 规则：
 
-- 只要准备进入算法设计、算法实现、算法测试、训练分析或信息归档，就不能继续停留在 `main`
+- 只要准备进入算法设计、算法实现、算法测试、训练结果整理或信息归档，就不能继续停留在 `main`
 
 - 允许在 `main` 上做只读分析或极小的纯文本修订，但一旦进入实质算法开发，必须先切到 `feature/*`
 
@@ -106,7 +106,7 @@ git checkout -b feature/<topic>
 |---|---|---|
 |`GLOBAL_DOCS/算法总表.md`|算法清单总入口：算法名、完整名、训练得分、状态、文档路径|AI|
 |`GLOBAL_DOCS/算法调研.md`|候选方向记录：尚未实现的外部调研、论文方向、优化思路|人|
-|`GLOBAL_DOCS/算法文档/`|正式算法文档目录，命名格式：`算法名_时间.md`|AI|
+|`GLOBAL_DOCS/算法文档/`|正式算法文档目录。每个算法使用 `算法完整名/README.md` 作为主文档，并在同目录 `screenshots/` 存放训练监控截图与官方评估结果截图|AI|
 
 **维护时机**：
 
@@ -145,7 +145,6 @@ git checkout -b feature/<topic>
 |`/kaiwu-current-algo-analysis`|分析当前算法实现与入口链|实现前、排障前、仅查看现状时|
 |`/kaiwu-algo-design`|把调研方向落成可实现方案，补齐环境配置和超参数，写入 `NOW.md`|算法落地|
 |`/kaiwu-algo-implementation`|基于源码理解完成实现、测试、`NOW.md` 更新，并产出算法文档初稿|算法实现 + 算法测试|
-|`/kaiwu-train-analysis`|基于真实训练结果做分析并给出下一轮建议|训练分析|
 |`/kaiwu-memory-archive`|最终归档、重置 `NOW.md`、commit、push、merge 指引|信息归档|
 
 ---
@@ -159,7 +158,7 @@ git checkout -b feature/<topic>
 -> /kaiwu-algo-design
 -> /kaiwu-algo-implementation
 -> 人执行真实训练
--> /kaiwu-train-analysis
+-> 人工整理训练监控、官网评估与截图归档
 -> /kaiwu-memory-archive
 ```
 
@@ -195,7 +194,7 @@ git checkout -b feature/<topic>
     
 - `/kaiwu-algo-implementation` 的最后一步是生成正式算法文档初稿
     
-- 训练完成后必须单独调用 `/kaiwu-train-analysis`，不直接把训练结果混入实现过程
+- 训练完成后必须单独做人主导的训练结果整理与官网评估，不直接把训练结果混入实现过程
     
 - `/kaiwu-memory-archive` 是最终收口步骤，负责归档、重置 `NOW.md`、commit、push 和 merge 指引
     
@@ -243,6 +242,8 @@ git checkout -b feature/<topic>
 
 ### 5.3 Commit 规范
 
+**语言要求：所有 commit message 必须使用中文**。
+
 #### 小步提交（阶段性、可独立验证的步骤）
 
 ```text
@@ -251,6 +252,16 @@ git checkout -b feature/<topic>
 - 改动内容：<具体改了什么>
 - 涉及文件：<文件列表>
 - 接口变化：<如有>
+- 烟测状态：通过
+```
+
+**示例**：
+```text
+feat(preprocessor): 添加宝箱距离奖励
+
+- 改动内容：在 reward_shaping 中添加最近宝箱距离奖励
+- 涉及文件：agent_ppo/feature/preprocessor.py
+- 接口变化：无
 - 烟测状态：通过
 ```
 
@@ -265,6 +276,18 @@ feat(<scope>): <算法完整名>
 - 烟测状态：通过
 - 训练状态：<待训练 / 训练中 / 得分 xxx>
 - 算法文档：<对应文档路径>
+```
+
+**示例**：
+```text
+feat(ppo): agent_ppo_20260410_hok_memory_map_v1
+
+- 实现内容：接入 HOK 风格记忆地图、16 维动作空间、分层奖励
+- 关键设计：CNN 地图编码、目标记忆器、闪现脱险奖励
+- 涉及文件：agent_ppo/conf/conf.py, agent_ppo/feature/preprocessor.py, agent_ppo/model/model.py
+- 烟测状态：通过
+- 训练状态：暂无正式训练得分
+- 算法文档：GLOBAL_DOCS/算法文档/agent_ppo_20260410_hok_memory_map_v1/README.md
 ```
 
 **禁止事项**：
@@ -395,7 +418,7 @@ train_test.py
 
 ## 8. 完整工作流示例
 
-**场景：从调研到训练分析的完整周期**
+**场景：从调研到训练结果整理的完整周期**
 
 ```text
 # 阶段 1：设计
@@ -421,10 +444,12 @@ train_test.py
 # 阶段 3：训练（人执行）
 人：在平台启动训练，记录任务 ID 和结果
 
-# 阶段 4：分析
-/kaiwu-train-analysis "任务ID: xxx, 得分: 85.3"
-# -> 分析结果，更新算法总表
-# -> 给出下一步建议
+# 阶段 4：训练结果整理（人主导）
+# -> 人工查看官方训练监控并截图
+# -> 在官网上传模型，命名严格遵循 <算法完整名>_<训练步数>
+# -> 对开放 10 图做 5 次官方评估
+# -> 将训练监控截图与最终评估结果截图放入对应算法文档目录的 screenshots/
+# -> 在正式算法文档中补充 10 张地图得分与评估结论；如需文档同步，再让 AI 更新算法总表与正式算法文档
 
 # 阶段 5：归档
 /kaiwu-memory-archive
@@ -443,7 +468,7 @@ train_test.py
 -> /kaiwu-algo-implementation
 -> 本地 smoke test
 -> 人执行平台训练
--> /kaiwu-train-analysis
+-> 人工查看官方训练监控、完成 5 次官网评估并归档截图
 -> /kaiwu-memory-archive
 -> 结束
 ```

@@ -13,7 +13,9 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 把一轮算法设计真正落地到源码中，并在实现结束时把 `DEV_MEMORY/NOW.md` 整理成“算法文档初稿”。
 
-这里的“算法文档初稿”应当参考当前 PPO 正式文档结构，包含除训练信息以外的全部内容，为后续训练分析和信息归档做准备。
+这里的“算法文档初稿”应当参考当前正式算法文档结构，包含除训练信息以外的全部内容，并为后续人工补充官方训练监控截图与官方评估结果截图预留目录。
+
+> **重要**：`agent_ppo/` 只是目录名（源于最初实现为 PPO），不代表必须保持 PPO 结构。你可以在该目录下实现任何算法（DQN、SAC、A3C 等），只要接口兼容即可。
 
 ## 强制前置步骤
 
@@ -76,7 +78,7 @@ train_test.py
 | 观测特征、合法动作、奖励 shaping | `agent_ppo/feature/preprocessor.py` |
 | 样本结构、GAE、回报计算 | `agent_ppo/feature/definition.py` |
 | 网络结构 | `agent_ppo/model/model.py` |
-| PPO loss、优化逻辑 | `agent_ppo/algorithm/algorithm.py` |
+| 算法 loss、优化逻辑 | `agent_ppo/algorithm/algorithm.py` |
 | Agent 推理/训练接口 | `agent_ppo/agent.py` |
 | 超参数 | `agent_ppo/conf/conf.py` |
 | 训练环境配置 | `agent_ppo/conf/train_env_conf.toml` |
@@ -145,15 +147,15 @@ python3 train_test.py
 要求：
 
 - 把 `DEV_MEMORY/NOW.md` 从过程性记录，整理成“算法文档初稿”结构
-- 内容参考 `GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md`
+- 内容参考 `GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md`
 - 只保留实现层面的稳定信息
 - 先不要写真实训练结果、训练得分、训练结论
-- 训练相关内容留给后续“训练分析”和“信息归档”阶段
+- 训练相关内容留给后续“人工训练结果整理、官网评估”和“信息归档”阶段
 
 可以选择两种做法：
 
 1. 直接把 `NOW.md` 改写成算法文档初稿格式
-2. 在 `GLOBAL_DOCS/算法文档/` 先生成初稿，同时在 `NOW.md` 保留简版指针和本轮状态
+2. 在 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 先生成初稿，同时创建 `screenshots/` 目录，并在 `NOW.md` 保留简版指针和本轮状态；该目录后续用于存放训练监控截图与官方评估结果截图
 
 若未明确要求，优先采用第 1 种，即先把 `NOW.md` 整理成算法文档初稿。
 
@@ -264,9 +266,9 @@ python3 train_test.py
 ## 7. 算法训练逻辑
 
 - loss 组成：
-- PPO clip：
+- 策略 loss（如 PPO clip、DQN Q-loss 等）：
 - value loss：
-- entropy：
+- 探索项（如 entropy、epsilon-greedy 等）：
 - 优化流程：
 - early stop / KL 控制：
 
@@ -313,6 +315,10 @@ python3 train_test.py
 - 正式训练任务 ID：
 - 正式训练得分：
 - 关键监控结论：
+- 官网评估模型命名：<算法完整名>_<训练步数>
+- 官网评估任务 ID（5次）：
+- 10 张开放地图得分：
+- 最终评估结果截图：
 - 是否进入归档：
 ```
 
@@ -322,4 +328,45 @@ python3 train_test.py
 - 不跳过开发文档约束
 - 不把正式改动做进 `agent_diy/`
 - 不编造训练结果
-- 算法实现结束时必须完成“NOW -> 算法文档初稿”
+- 算法实现结束时必须完成”NOW -> 算法文档初稿”
+
+---
+
+## 下一步行动（执行后必须输出）
+
+根据实现完成度，明确告诉用户：
+
+### 场景 1：Smoke test 失败
+```
+下一步：修复代码错误
+- 根据报错信息修改对应文件
+- 重新运行 `python train_test.py`
+- 直到 smoke test 通过
+```
+
+### 场景 2：Smoke test 通过，算法文档初稿已完成
+```
+下一步：提交代码并准备训练
+1. 提交代码：`git add -A && git commit -m “feat(scope): 实现 xxx 算法”`
+   
+   示例 commit message：
+   ```
+   feat(preprocessor): 添加宝箱距离奖励
+   
+   - 改动目的：优化奖励 shaping
+   - 涉及文件：agent_ppo/feature/preprocessor.py
+   - 接口变化：无
+   - 烟测状态：通过
+   ```
+2. 推送到远端：`git push -u origin feature/<分支名>`
+3. 在平台上启动正式训练
+4. 训练完成后人工截图训练监控，按 `<算法完整名>_<训练步数>` 上传模型做 5 次官方评估，整理 10 张地图得分与最终结果截图，再决定下一步
+```
+
+### 场景 3：算法文档初稿尚未完成
+```
+下一步：完成算法文档
+- 继续完善 `DEV_MEMORY/NOW.md`
+- 将其整理为算法文档初稿格式
+- 完成后即可进入训练阶段
+```

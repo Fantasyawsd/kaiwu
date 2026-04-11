@@ -15,6 +15,8 @@ allowed-tools: Bash(*), Read, Grep, Glob
 
 这是算法开发的第一步，必须优先使用。
 
+> **重要提示**：`agent_ppo/` 是算法实现目录的名称（源于最初为 PPO 实现），但**不限制必须使用 PPO 算法**。你可以在该目录下实现任何 RL 算法（DQN、SAC、A3C、PPO 等），只要保持 `agent.py` 接口兼容（能通过 `train_test.py` 烟测）即可。
+
 ## 执行步骤
 
 ### Step 0:检查分支
@@ -88,3 +90,18 @@ allowed-tools: Bash(*), Read, Grep, Glob
 - 只做读取和判断，不直接改代码
 - 若发现 `main` 上有较大开发任务，明确提醒切分支
 - 若发现当前轮次已经进入归档前阶段，建议后续使用 `/kaiwu-memory-archive`
+
+---
+
+## 下一步行动（执行后必须输出）
+
+根据初始化结果，明确告诉用户接下来该做什么：
+
+| 场景 | 下一步 Skill | 说明 |
+|------|-------------|------|
+| 当前在 `main` 分支，有未完成任务 | **先执行 Git 命令** | `git checkout -b feature/xxx`，切分支后再用 `/kaiwu-algo-implementation` |
+| NOW.md 为空或只有模板 | `/kaiwu-algo-design` | 需要先做算法设计 |
+| NOW.md 有完整设计但未实现 | `/kaiwu-algo-implementation` | 直接进入实现阶段 |
+| NOW.md 已实现但未归档 | `/kaiwu-memory-archive` | 完成算法归档 |
+| 想看当前算法状态 | `/kaiwu-current-algo-analysis` | 快速分析当前实现 |
+| 训练完成需要整理结果 | 人工查看官方训练监控，按 `算法完整名 + 训练步数` 上传模型做 5 次官方评估，并将截图放入算法文档目录 | 整理真实训练结果与 10 张地图得分 |
