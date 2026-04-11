@@ -192,7 +192,7 @@ git checkout -b feature/<topic>
     
 - `/kaiwu-algo-implementation` 应采用小步迭代：实现 → 烟测 → 更新 `NOW.md` → 小步 commit
     
-- `/kaiwu-algo-implementation` 的最后一步是生成正式算法文档初稿
+- `/kaiwu-algo-implementation` 的最后一步是创建算法文档目录结构（含 `README.md` 初稿 + `screenshots/` 空目录）
     
 - 训练完成后必须单独做人主导的训练结果整理与官网评估，不直接把训练结果混入实现过程
     
@@ -440,6 +440,10 @@ train_test.py
 # -> 第 3 步：修改 workflow 支持序列输入
 #    烟测 -> 更新 NOW -> 小步 commit
 # -> 最终烟测 -> 最终 commit
+# -> 创建算法文档目录结构：
+#    GLOBAL_DOCS/算法文档/agent_ppo_20260410_lstm_v1/
+#    ├── README.md      # 算法文档初稿（不含训练结果）
+#    └── screenshots/   # 空目录，等待训练完成后放入截图
 
 # 阶段 3：训练（人执行）
 人：在平台启动训练，记录任务 ID 和结果
@@ -453,8 +457,9 @@ train_test.py
 
 # 阶段 5：归档
 /kaiwu-memory-archive
-# -> 创建正式算法文档
+# -> 更新正式算法文档（补充训练结果到已有 README.md）
 # -> 更新算法总表
+# -> 重置 NOW.md
 ```
 
 ---

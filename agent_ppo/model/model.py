@@ -12,7 +12,6 @@ Neural network model for Gorge Chase PPO.
 
 import torch
 import torch.nn as nn
-import numpy as np
 
 from agent_ppo.conf.conf import Config
 
@@ -36,7 +35,7 @@ class Model(nn.Module):
 
     def __init__(self, device=None):
         super().__init__()
-        self.model_name = "gorge_chase_lite"
+        self.model_name = "gorge_chase_memory_map_ppo"
         self.device = device
 
         action_num = Config.ACTION_NUM
@@ -55,8 +54,25 @@ class Model(nn.Module):
             make_fc_layer(monster_pair_dim, Config.MONSTER_ENCODER_DIM),
             nn.ReLU(),
         )
+
+        self.map_shape = (
+            Config.LOCAL_MAP_CHANNEL,
+            Config.LOCAL_MAP_SIZE,
+            Config.LOCAL_MAP_SIZE,
+        )
+        expected_map_dim = self.map_shape[0] * self.map_shape[1] * self.map_shape[2]
+        if map_dim != expected_map_dim:
+            raise ValueError(f"map feature dim mismatch: {map_dim} != {expected_map_dim}")
+
         self.map_encoder = nn.Sequential(
-            make_fc_layer(map_dim, Config.MAP_ENCODER_DIM),
+            nn.Conv2d(Config.LOCAL_MAP_CHANNEL, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Flatten(),
+            make_fc_layer(32 * 3 * 3, Config.MAP_ENCODER_DIM),
             nn.ReLU(),
         )
         self.control_encoder = nn.Sequential(
@@ -73,6 +89,8 @@ class Model(nn.Module):
         self.backbone = nn.Sequential(
             make_fc_layer(fusion_dim, Config.FUSION_HIDDEN_DIM),
             nn.ReLU(),
+            make_fc_layer(Config.FUSION_HIDDEN_DIM, Config.FUSION_HIDDEN_DIM),
+            nn.ReLU(),
         )
 
         # Actor head / 策略头
@@ -87,6 +105,7 @@ class Model(nn.Module):
         )
         monster_feat = torch.cat([monster_1, monster_2], dim=1)
         control_feat = torch.cat([legal_action, progress_feat], dim=1)
+        map_feat = map_feat.view(-1, *self.map_shape)
 
         hidden = torch.cat(
             [
