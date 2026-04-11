@@ -21,6 +21,25 @@ git checkout -b feature/<topic>
 
 只有在已经位于合适的 `feature/*` 分支后，才进入算法设计、算法实现、算法测试和归档流程；第一个 skill 必须是 `/kaiwu-dev-init`。
 
+## 推荐 Repo-local Skills 工作流
+
+如果你的 AI 工具支持读取仓库内 skills，推荐优先按下面顺序协作：
+
+```text
+/kaiwu-dev-init
+-> /kaiwu-algo-compare        # 当需要比较外部调研算法 / reference_algos / 历史版本 / 用户方案时
+-> /kaiwu-algo-design
+-> /kaiwu-algo-implementation
+-> 人执行真实训练与截图整理
+-> /kaiwu-memory-archive
+```
+
+按需补充的辅助 skill：
+
+- `/kaiwu-doc-query`：查询环境规则、数据协议、框架接口和 workflow 约束
+- `/kaiwu-current-algo-analysis`：快速查看当前 baseline 快照、入口链路和已知限制
+- `/kaiwu-algo-compare`：在进入设计前，把候选算法和当前 baseline 放到同一坐标系下比较，判断是否值得做
+
 ---
 ## 项目结构
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "KaiWu Algo Compare"
+  short_description: "Compare candidate algorithms against the current baseline."
+  default_prompt: "Use $kaiwu-algo-compare to compare a candidate algorithm or reference implementation with the current KaiWu Gorge Chase baseline."
