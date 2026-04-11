@@ -1,0 +1,55 @@
+{
+  "obs": {
+    "frame_state": {
+      "heroes": "type=object, shape=(1,)",
+      "organs": "type=object, shape=(11,)",
+      "step_no": 0
+    },
+    "score_info": {
+      "total_score": 199.0,
+      "score": 0.0,
+      "step_no": 0,
+      "treasure_collected_count": 0,
+      "treasure_score": 0,
+      "buff_count": 0,
+      "talent_count": 0
+    },
+    "map_info": "type=object, shape=(11,)",
+    "legal_act": "type=int64, shape=(2,)"
+  },
+  "extra_info": {
+    "result_message": "ok",
+    "frame_state": {
+      "heroes": "type=object, shape=(1,)",
+      "organs": "type=object, shape=(11,)",
+      "step_no": 0
+    },
+    "game_info": {
+      "total_score": 199.8,
+      "pos": {
+        "x": 24,
+        "z": 87
+      },
+      "start_pos": {
+        "x": 24,
+        "z": 87
+      },
+      "end_pos": {
+        "x": 104,
+        "z": 57
+      },
+      "treasure_count": 10,
+      "buff_duration": 51,
+      "map_info": "type=object, shape=(11,)",
+      "obstacle_id": "type=int64, shape=(1,)",
+      "score": 0.0,
+      "step_no": 0,
+      "treasure_collected_count": 0,
+      "treasure_score": 0,
+      "buff_count": 0,
+      "talent_count": 0,
+      "buff_remain_time": 0
+    },
+    "result_code": 0
+  }
+}

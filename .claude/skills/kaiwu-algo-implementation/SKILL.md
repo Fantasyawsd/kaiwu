@@ -13,7 +13,9 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 把一轮算法设计真正落地到源码中，并在实现结束时把 `DEV_MEMORY/NOW.md` 整理成“算法文档初稿”。
 
-这里的“算法文档初稿”应当参考当前 PPO 正式文档结构，包含除训练信息以外的全部内容，为后续训练分析和信息归档做准备。
+这里的“算法文档初稿”应当参考当前正式算法文档结构，包含除训练信息以外的全部内容，并为后续人工补充官方训练监控截图与官方评估结果截图预留目录。
+
+> **重要**：`agent_ppo/` 只是目录名（源于最初实现为 PPO），不代表必须保持 PPO 结构。你可以在该目录下实现任何算法（DQN、SAC、A3C 等），只要接口兼容即可。
 
 ## 强制前置步骤
 
@@ -30,7 +32,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 ## 实现前必须具备的前置知识
 
-### 1. 开发文档理解
+### 1. 开发文档与外部参考理解
 
 至少要知道：
 
@@ -38,6 +40,16 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 - 训练系统配置来自 `conf/configure_app.toml`
 - 环境返回结构、动作空间、字段协议来自 `开发文档/开发指南/环境详述.md` 与 `开发文档/开发指南/数据协议.md`
 - Agent / 特征 / 模型 / 算法 / workflow 的框架接口来自 `开发文档/腾讯开悟强化学习框架/智能体/*.md`
+
+**若涉及外部参考算法**：
+
+- 查阅 `reference_algos/<算法名>/README.md` 了解整体结构
+- 查阅 `reference_algos/<算法名>/code/` 下的具体实现：
+  - 特征处理代码（如 `feature/state_manager.py`）
+  - 模型结构代码（如 `model/model.py`）
+  - 奖励计算逻辑
+- **明确区分**：哪些代码可以直接迁移、哪些需要适配修改、哪些不能照搬
+- 在实现注释中标注灵感来源（如 `# 思路来自 reference_algos/hok_prelim/...`）
 
 ### 2. 项目源码入口理解
 
@@ -66,7 +78,7 @@ train_test.py
 | 观测特征、合法动作、奖励 shaping | `agent_ppo/feature/preprocessor.py` |
 | 样本结构、GAE、回报计算 | `agent_ppo/feature/definition.py` |
 | 网络结构 | `agent_ppo/model/model.py` |
-| PPO loss、优化逻辑 | `agent_ppo/algorithm/algorithm.py` |
+| 算法 loss、优化逻辑 | `agent_ppo/algorithm/algorithm.py` |
 | Agent 推理/训练接口 | `agent_ppo/agent.py` |
 | 超参数 | `agent_ppo/conf/conf.py` |
 | 训练环境配置 | `agent_ppo/conf/train_env_conf.toml` |
@@ -128,33 +140,56 @@ python3 train_test.py
 - smoke test 结果
 - 尚未做的训练事项
 
-### Step 6：把 NOW.md 整理成算法文档初稿
+### Step 6：创建算法文档目录并生成初稿
 
 这是算法实现的最后一步，必须执行。
 
-要求：
+#### 步骤 6.1：预创建算法文档目录
 
-- 把 `DEV_MEMORY/NOW.md` 从过程性记录，整理成“算法文档初稿”结构
-- 内容参考 `GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md`
-- 只保留实现层面的稳定信息
-- 先不要写真实训练结果、训练得分、训练结论
-- 训练相关内容留给后续“训练分析”和“信息归档”阶段
+提前创建训练结果存放目录，方便后续人工截图直接放入：
 
-可以选择两种做法：
+```bash
+mkdir -p GLOBAL_DOCS/算法文档/<算法完整名>/screenshots
+```
 
-1. 直接把 `NOW.md` 改写成算法文档初稿格式
-2. 在 `GLOBAL_DOCS/算法文档/` 先生成初稿，同时在 `NOW.md` 保留简版指针和本轮状态
+#### 步骤 6.2：生成算法文档初稿
 
-若未明确要求，优先采用第 1 种，即先把 `NOW.md` 整理成算法文档初稿。
+在 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 生成初稿：
+
+- 内容参考 `GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md`
+- 把 `DEV_MEMORY/NOW.md` 从过程性记录整理成正式结构
+- 只保留实现层面的稳定信息（特征、模型、奖励、超参数等）
+- 明确标注「待训练补充项」
+- **不编造训练结果、训练得分、训练结论**
+
+#### 步骤 6.3：同步更新 NOW.md
+
+在 `NOW.md` 中：
+- 保留简版实现记录和本轮状态
+- 添加指针：`算法文档初稿位置：GLOBAL_DOCS/算法文档/<算法完整名>/README.md`
+- 添加指针：`截图目录：GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`
+
+#### 算法文档目录结构
+
+```
+GLOBAL_DOCS/算法文档/<算法完整名>/
+├── README.md          # 算法文档初稿（训练结果部分留空/标注待补充）
+└── screenshots/       # 空目录，训练完成后人工放入：
+                       #   - 训练监控截图
+                       #   - 官网评估结果截图
+```
 
 ## 算法文档初稿模板
 
+生成到 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md`：
+
 ```markdown
-# <算法完整名> 算法文档初稿
+# <算法完整名> 算法文档
 
 **文档版本**：<算法完整名>
 **记录日期**：<YYYY-MM-DD>
-**当前状态**：已实现 / smoke test 已通过 / 暂无正式训练结果
+**当前状态**：已实现；smoke test 通过；暂无正式训练得分
+**截图目录**：`GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`（训练完成后人工放入）
 
 ---
 
@@ -254,9 +289,9 @@ python3 train_test.py
 ## 7. 算法训练逻辑
 
 - loss 组成：
-- PPO clip：
+- 策略 loss（如 PPO clip、DQN Q-loss 等）：
 - value loss：
-- entropy：
+- 探索项（如 entropy、epsilon-greedy 等）：
 - 优化流程：
 - early stop / KL 控制：
 
@@ -303,6 +338,10 @@ python3 train_test.py
 - 正式训练任务 ID：
 - 正式训练得分：
 - 关键监控结论：
+- 官网评估模型命名：<算法完整名>_<训练步数>
+- 官网评估任务 ID（5次）：
+- 10 张开放地图得分：
+- 最终评估结果截图：
 - 是否进入归档：
 ```
 
@@ -312,4 +351,64 @@ python3 train_test.py
 - 不跳过开发文档约束
 - 不把正式改动做进 `agent_diy/`
 - 不编造训练结果
-- 算法实现结束时必须完成“NOW -> 算法文档初稿”
+- 算法实现结束时必须完成”NOW -> 算法文档初稿”
+
+---
+
+## 下一步行动（执行后必须输出）
+
+根据实现完成度，明确告诉用户：
+
+### 场景 1：Smoke test 失败
+```
+下一步：修复代码错误
+- 根据报错信息修改对应文件
+- 重新运行 `python train_test.py`
+- 直到 smoke test 通过
+```
+
+### 场景 2：Smoke test 通过，算法文档初稿已完成
+```
+下一步：提交代码并准备训练
+
+1. 确认目录结构已创建：
+   GLOBAL_DOCS/算法文档/<算法完整名>/
+   ├── README.md          # 算法文档初稿
+   └── screenshots/       # 空目录，用于存放训练截图
+
+2. 提交代码：
+   git add -A
+   git commit -m “feat(<scope>): <算法完整名>”
+   git push -u origin feature/<分支名>
+
+   示例 commit message：
+   ─────────────────────────────────────────
+   feat(ppo): agent_ppo_20260410_hok_memory_map_v1
+
+   - 实现内容：接入 HOK 风格记忆地图、16 维动作空间、分层奖励
+   - 关键设计：CNN 地图编码、目标记忆器、闪现脱险奖励
+   - 涉及文件：agent_ppo/conf/conf.py, agent_ppo/feature/preprocessor.py, agent_ppo/model/model.py
+   - 烟测状态：通过
+   - 训练状态：暂无正式训练得分
+   - 算法文档：GLOBAL_DOCS/算法文档/agent_ppo_20260410_hok_memory_map_v1/README.md
+   ─────────────────────────────────────────
+
+3. 在平台上启动正式训练
+
+4. 训练完成后人工操作：
+   - 查看官方训练监控并截图 → 放入 screenshots/
+   - 按 `<算法完整名>_<训练步数>` 上传模型
+   - 对开放 10 图做 5 次官方评估
+   - 将评估结果截图 → 放入 screenshots/
+   - 在 README.md 中补充训练得分和 10 张地图得分
+
+5. 截图和结果整理完毕后，执行 /kaiwu-memory-archive 完成归档
+```
+
+### 场景 3：算法文档初稿尚未完成
+```
+下一步：完成算法文档
+- 继续完善 `DEV_MEMORY/NOW.md`
+- 将其整理为算法文档初稿格式
+- 完成后即可进入训练阶段
+```

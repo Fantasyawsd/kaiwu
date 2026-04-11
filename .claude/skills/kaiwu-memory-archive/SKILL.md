@@ -35,7 +35,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 - `DEV_MEMORY/NOW.md`
 - `GLOBAL_DOCS/算法总表.md`
-- 当前算法对应的正式算法文档（若已存在）
+- 当前算法对应的正式算法文档目录（若已存在）
 
 确认：
 
@@ -45,7 +45,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 ### Step 2：同步正式算法文档
 
-将 `NOW.md` 中已经稳定的信息整理到 `GLOBAL_DOCS/算法文档/<算法完整名>.md`。
+将 `NOW.md` 中已经稳定的信息整理到 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md`。
 
 正式算法文档应包含：
 
@@ -62,6 +62,8 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 - 训练 workflow
 - 已知限制
 - 真实训练信息（若已有）
+- 官方训练监控截图索引（截图文件由人放到 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`）
+- 官网模型评估记录：模型上传命名、5 次评估、10 张地图得分、最终结果截图索引
 
 ### Step 3：同步算法总表
 
@@ -70,14 +72,14 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 - 算法完整名
 - 当前状态
 - 训练得分或“暂无正式训练结果”
-- 对应正式算法文档路径
+- 对应正式算法文档入口路径
 
 ### Step 4：重置 NOW.md
 
 归档完成后，把 `DEV_MEMORY/NOW.md` 重置为新的轮次模板，只保留：
 
 - 当前无进行中的实现，或新的下一轮计划
-- 指向最新正式算法文档的引用
+- 指向最新正式算法文档入口的引用
 
 不要继续把上一轮详细实现留在 `NOW.md` 中。
 
@@ -93,7 +95,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 ## 当前实现进度
 
 - 当前处于归档完成后的初始化状态。
-- 最近一次已归档算法文档：`GLOBAL_DOCS/算法文档/<算法完整名>.md`
+- 最近一次已归档算法文档：`GLOBAL_DOCS/算法文档/<算法完整名>/README.md`
 
 ## 下一步计划
 
@@ -105,10 +107,12 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 
 确认：
 
-- [ ] `GLOBAL_DOCS/算法文档/` 已创建或更新
+- [ ] `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 已创建或更新
+- [ ] `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/` 已预留，等待人工放入官方训练监控截图与最终评估结果截图
 - [ ] `GLOBAL_DOCS/算法总表.md` 已更新
 - [ ] `DEV_MEMORY/NOW.md` 已重置
 - [ ] 归档内容与真实训练信息一致
+- [ ] 若已有官网评估结果，模型命名、5 次评估与 10 张地图得分已写入正式算法文档
 
 ### Step 6：最终 Git 收尾
 
@@ -122,12 +126,12 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 推荐 commit message：
 
 ```text
-feat(archive): finalize <算法完整名>
+feat(archive): 归档 <算法完整名>
 
-- archive NOW.md into formal algorithm docs
-- update GLOBAL_DOCS/算法总表.md
-- reset DEV_MEMORY/NOW.md
-- sync final training status
+- 将 NOW.md 归档到正式算法文档目录下的 `README.md`
+- 更新 GLOBAL_DOCS/算法总表.md
+- 重置 DEV_MEMORY/NOW.md
+- 同步训练状态
 ```
 
 ### Step 7：指导用户发起 merge
@@ -146,3 +150,39 @@ push 完成后，明确告诉用户：
 - 不编造训练结果
 - 归档完成后必须重置 `NOW.md`
 - 归档完成后要完成最终 `commit` 与 `push`
+
+---
+
+## 下一步行动（执行后必须输出）
+
+归档完成后，明确告诉用户：
+
+```markdown
+## 归档完成 - 下一步
+
+### 已完成
+- [x] 算法文档已归档到 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md`
+- [x] 官方训练监控与评估结果截图目录 `screenshots/` 已预留
+- [x] 算法总表已更新
+- [x] `DEV_MEMORY/NOW.md` 已重置
+- [x] 代码已提交并推送到远端分支 `feature/<分支名>`
+
+### 接下来请执行（用户操作）
+1. 去代码托管平台（如 GitHub/GitLab）发起 Merge Request / Pull Request
+2. 将 `feature/<分支名>` 合并到 `main`
+3. Merge 前建议检查：
+   - 算法文档是否完整
+   - 训练结果是否真实
+   - 是否影响其他正在进行的开发
+
+### 合并后（回到 main 分支）
+```bash
+git checkout main
+git pull
+```
+
+### 开启下一轮开发
+合并完成后，如需继续：
+- **优化当前算法**：使用 `/kaiwu-dev-init` 开始新一轮迭代
+- **调研新方向**：查看 `GLOBAL_DOCS/算法调研.md` 和 `reference_algos/`
+```

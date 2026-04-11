@@ -46,7 +46,7 @@
 2. [README.md](README.md)
 3. [KAIWU-WORKFLOW.md](KAIWU-WORKFLOW.md)
 4. [GLOBAL_DOCS/算法总表.md](GLOBAL_DOCS/算法总表.md)
-5. [GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md](GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md)
+5. [GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md](GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md)
 6. [开发文档/README.md](开发文档/README.md)
 7. [CONTRIBUTE.md](CONTRIBUTE.md)
 
@@ -132,6 +132,10 @@ train_test.py
 - 做外部调研，决定要不要尝试新方向
 - 决定是否继续当前方向，还是切换方向
 - 启动平台真实训练，观察监控和日志
+- 从官方训练监控整理训练全部曲线截图，并放入对应算法文档目录的 `screenshots/`
+- 在官网上传模型；后续归档默认以 `screenshots/` 中图片文件名（去掉扩展名）作为上传到官网的模型全称
+- 对开放 10 张地图执行 5 次官方评估，并把测试截图也放入同一个 `screenshots/` 目录
+- 人不再额外补填模型名、截图位置或截图说明；AI 只检测 `screenshots/` 里是否有图
 - 记录正式实验结果
 - 最终决定是否 commit、push、merge
 
@@ -142,7 +146,7 @@ train_test.py
 - 完成代码修改
 - 跑最小验证，比如 `python3 train_test.py`
 - 把当前状态同步到 `DEV_MEMORY/NOW.md`
-- 在结论稳定后整理到 `GLOBAL_DOCS/算法总表.md` 与 `GLOBAL_DOCS/算法文档/*`
+- 基于人提供的真实训练结果、10 张地图得分和截图，在结论稳定后整理到 `GLOBAL_DOCS/算法总表.md` 与 `GLOBAL_DOCS/算法文档/*`
 - 生成 commit 建议、整理变更说明
 
 ### 4.3 边界要说清
@@ -236,7 +240,7 @@ README.md
 KAIWU-WORKFLOW.md
 人类开发者AI协作指南.md
 GLOBAL_DOCS/算法总表.md
-GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733.md
+GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md
 开发文档/README.md
 DEV_MEMORY/NOW.md
 
@@ -266,15 +270,19 @@ DEV_MEMORY/NOW.md
 #### 模板 C：喂给 AI 一轮训练结果
 
 ```text
-我已经跑完一轮正式训练，下面是结果和日志摘要：
+我已经跑完一轮正式训练，并把训练/测试截图放到对应算法文档目录的 `screenshots/` 里了。
 
-1. 训练任务 ID：
-2. 地图/配置：
-3. 关键监控指标：
-4. 最终表现：
-5. 观察到的问题：
+补充约定：
+1. 图片文件名（去掉扩展名）就是上传到官网的模型全称
+2. 只要检测到 `screenshots/` 里有图，就按已有截图整理文档
+3. 不需要我再额外填写模型名、截图位置或真伪说明
 
-请你基于这些结果：
+如果需要，我再补充：
+- 训练任务 ID：
+- 地图/配置：
+- 观察到的问题：
+
+请你基于这些截图和补充信息：
 1. 更新当前算法文档
 2. 更新 GLOBAL_DOCS/算法总表.md 中的训练状态
 3. 给出下一轮迭代建议
@@ -378,6 +386,8 @@ git push origin feature/<topic>
 
 ### 7.4 commit 规范
 
+**语言要求：所有 commit message 必须使用中文**。
+
 小步 commit 适用场景：
 
 - 单个问题修复
@@ -385,12 +395,25 @@ git push origin feature/<topic>
 - 阶段性文档同步
 - 算法实现中的一个可独立验证步骤
 
-小步 commit 至少要写清：
+小步 commit 格式：
+```
+<type>(<scope>): <简短描述>
 
-- 改动目的
-- 改动文件
-- 关键接口或配置变化
-- 最小验证状态
+- 改动目的：<为什么改>
+- 改动文件：<改了哪些文件>
+- 关键接口或配置变化：<如有>
+- 最小验证状态：<通过 / 失败>
+```
+
+示例：
+```bash
+git commit -m “feat(preprocessor): 添加宝箱距离奖励
+
+- 改动目的：优化奖励 shaping，鼓励智能体主动收集宝箱
+- 改动文件：agent_ppo/feature/preprocessor.py
+- 关键接口或配置变化：新增 TREASURE_DIST_COEF 参数
+- 最小验证状态：通过”
+```
 
 完整算法 commit 适用场景：
 
@@ -398,19 +421,32 @@ git push origin feature/<topic>
 - 当前阶段算法文档、算法总表已同步
 - 最小验证已通过
 
-完整算法 commit 至少要写清：
+完整算法 commit 格式：
+```
+feat(<scope>): <算法完整名>
 
-- 实现或完成的算法
-- 本轮算法完整名
-- 关键超参数设计
-- 当前可确认的训练得分或验证状态
-- 对应算法文档路径
-- 对应的全局 / 当前轮次文档同步情况
+- 实现内容：<本轮完成的全部功能>
+- 关键超参数设计：<核心参数取值>
+- 当前可确认的训练得分或验证状态：<具体得分或验证状态>
+- 对应算法文档路径：<文档位置>
+- 对应的全局 / 当前轮次文档同步情况：<已同步 / 待同步>
+```
+
+示例：
+```bash
+git commit -m “feat(ppo): agent_ppo_20260410_hok_memory_map_v1
+
+- 实现内容：接入 HOK 风格记忆地图、16 维动作空间、分层奖励设计
+- 关键超参数设计：GAMMA=0.995, CLIP_PARAM=0.15, MAP_ENCODER_DIM=128
+- 当前可确认的训练得分或验证状态：仅完成 smoke 验证，暂无正式训练得分
+- 对应算法文档路径：GLOBAL_DOCS/算法文档/agent_ppo_20260410_hok_memory_map_v1/README.md
+- 对应的全局 / 当前轮次文档同步情况：已同步”
+```
 
 关于训练得分：
 
 - 有真实结果时，写真实结果
-- 没有正式训练结果时，明确写“暂无正式训练得分”或“仅完成 smoke 验证”
+- 没有正式训练结果时，明确写”暂无正式训练得分”或”仅完成 smoke 验证”
 - 不允许为了让提交更完整而编造结果
 
 ### 7.5 完整改动的收口标准
@@ -455,7 +491,7 @@ git push origin feature/<topic>
 - 优先小步提交，避免一次性混入多个方向
 - 实现过程中持续维护 `DEV_MEMORY/NOW.md`
 - 归档时只整理稳定算法信息，不再向 `GLOBAL_DOCS` 追加过程型记忆文件
-- 正式算法文档统一使用 `算法名_时间.md` 命名，并在算法总表中保留最新路径
+- 正式算法文档统一使用 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 作为入口，并在同目录 `screenshots/` 存放训练/测试截图；默认以图片文件名（去掉扩展名）记录官网模型全称，AI 归档时只检测是否有图
 
 ---
 
@@ -523,18 +559,23 @@ AI 负责：
 - 说明 smoke test 是否通过
 - 如果失败，定位原因并修复
 
-### Stage 5：真实训练
+### Stage 5：真实训练、官网评估与截图准备
 
 人负责：
 
 - 在平台或正式环境启动训练
 - 观察监控、日志、得分
+- 从官方训练监控整理训练全部曲线截图，并放入对应算法文档目录的 `screenshots/`
+- 在官网上传模型；后续归档默认以 `screenshots/` 中图片文件名（去掉扩展名）作为上传到官网的模型全称
+- 对开放 10 张地图执行 5 次官方评估
+- 将测试截图放入同一个 `screenshots/` 目录
+- 不再额外补填模型名、截图位置或截图说明
 - 记录真实实验结果
 
 AI 负责：
 
 - 给出训练前检查清单
-- 帮你整理监控指标和日志
+- 基于你放入 `screenshots/` 的截图整理文档素材
 - 基于结果提出下一轮建议
 
 ### Stage 6：文档同步
@@ -547,6 +588,9 @@ AI 负责：
 
 - 当前轮次信息写入 `DEV_MEMORY/NOW.md`
 - 稳定结论整理进 `GLOBAL_DOCS/算法总表.md` 与 `GLOBAL_DOCS/算法文档/*`
+- 在正式算法文档里补充训练/测试截图索引
+- 通过 `screenshots/` 中图片文件名提取官网模型全称
+- 归档时只检测是否有图，不核验截图真伪
 - 必要时更新正式算法文档和算法总表
 
 ### Stage 7：Git 收口
@@ -604,8 +648,9 @@ AI 负责：
 7. 跑 `python3 train_test.py`
 8. 让 AI 更新 `DEV_MEMORY/NOW.md`
 9. 人跑正式训练
-10. 让 AI 基于真实结果更新 `GLOBAL_DOCS/算法总表.md` 和正式算法文档
-11. 人确认后再 commit / push / merge
+10. 人先把训练全部曲线截图和测试截图放入 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`，并保证图片文件名（去掉扩展名）就是上传到官网的模型全称
+11. 再让 AI 只要检测到目录里有图，就基于截图更新 `GLOBAL_DOCS/算法总表.md` 和正式算法文档
+12. 人确认后再 commit / push / merge
 
 这就是这个仓库里“人做决策，AI 做实现与整理”的标准协作闭环。
 
@@ -616,7 +661,7 @@ AI 负责：
 当前推荐的完整工作流是：
 
 ```text
-算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练分析 -> 信息归档 -> 结束
+算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练结果整理 -> 信息归档 -> 结束
 ```
 
 需要额外强调的规则：
@@ -625,6 +670,7 @@ AI 负责：
 2. `/kaiwu-algo-design` 不能只写抽象方案，必须结合开发文档补齐环境配置和超参数。
 3. `/kaiwu-algo-implementation` 必须先理解源码和改动文件落点，再进行实现；实现的最后一步是把 `NOW.md` 整理成正式算法文档初稿。
 4. `/kaiwu-memory-archive` 是开发流程的最后一步，负责正式归档、重置 `NOW.md`、完成最终 `commit`、`push`，并指导用户发起 merge。
+5. 训练结果整理由人主导完成：人只需要把训练/测试截图放入 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`；图片文件名（去掉扩展名）视作上传到官网的模型全称；AI 只检测是否有图，不校验真伪，也不再要求人额外填写模型名或截图说明。
 
 推荐的 skill 顺序：
 
@@ -632,7 +678,6 @@ AI 负责：
 /kaiwu-dev-init
 /kaiwu-algo-design
 /kaiwu-algo-implementation
-/kaiwu-train-analysis
 /kaiwu-memory-archive
 ```
 
@@ -649,7 +694,7 @@ AI 负责：
 3. 正式实现只改 agent_ppo/，不要把正式改动放到 agent_diy/
 4. 改完后运行 python3 train_test.py 做 smoke test
 5. 同步 DEV_MEMORY/NOW.md
-6. 实现收尾时，把 NOW.md 整理成 GLOBAL_DOCS/算法文档/<算法完整名>.md 的初稿，内容包含除训练结果外的全部内容
+6. 实现收尾时，把 NOW.md 整理成 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 的初稿，并预留 `screenshots/` 目录给人工放训练/测试截图；归档时默认从图片文件名读取官网模型全称
 7. 暂时不要 push
 ```
 
@@ -660,5 +705,260 @@ AI 负责：
 
 请把本轮稳定结论归档到 GLOBAL_DOCS，并同步算法总表和正式算法文档；归档完成后重置 NOW.md，完成最终 commit、push，并告诉我接下来应该怎样发起 merge。
 ```
+
+---
+
+## 12. 当前训练指标、超参数与环境参数速查
+
+### 12.1 先看哪几个文件
+
+| 内容 | 文件 |
+| --- | --- |
+| 当前 monitor 面板配置 | `agent_ppo/conf/monitor_builder.py` |
+| Train / Val 指标上报 | `agent_ppo/workflow/train_workflow.py` |
+| PPO loss 指标上报 | `agent_ppo/algorithm/algorithm.py` |
+| 算法、奖励、结构超参数 | `agent_ppo/conf/conf.py` |
+| 训练环境参数 | `agent_ppo/conf/train_env_conf.toml` |
+| 验证环境参数 | `agent_ppo/conf/eval_env_conf.toml` |
+| 系统训练参数 | `conf/configure_app.toml` |
+
+### 12.2 当前训练指标说明
+
+当前 monitor 以代码实现为准，分成 `Train`、`环境指标`、`训练损失`、`Val` 四组。
+
+需要先记住两件事：
+- `Train` 是训练单局指标，单局结束就上报。
+- `Val` 是验证聚合指标，不是单局值；当前实现默认每训练 `50` 局切一次 eval，eval 跑 `10` 局后求均值再上报。
+
+#### Train 组
+
+| 指标 | 面板名 | 含义 |
+| --- | --- | --- |
+| `train_reward` | `Reward` | 单局总训练奖励，等于 pre/post shaped reward 与 pre/post terminal bonus 的总和。 |
+| `train_total_score` | `TotalScore` | 单局结束时环境侧 `total_score`。 |
+| `train_step_score` | `StepScore` | 单局结束时环境侧步数得分。 |
+| `train_treasure_score` | `TreasureScore` | 单局结束时环境侧宝箱得分。 |
+| `train_treasures_collected` | `Treasures` | 单局最终收集到的宝箱数量。 |
+| `train_episode_steps` | `Steps` | 单局完成步数。 |
+| `train_speedup_reached` | `SpeedupReached` | 本局是否至少拿到过一次 buff，取值 `0/1`。 |
+| `train_pre_speedup_steps` | `Pre_Steps` | 首次拿到 buff 之前累计步数。 |
+| `train_post_speedup_steps` | `Post_Steps` | 首次拿到 buff 之后累计步数。 |
+| `train_pre_speedup_reward` | `Pre_TotalR` | buff 前总 reward，等于 `pre_speedup_shaped_reward + pre_speedup_terminal_bonus`。 |
+| `train_post_speedup_reward` | `Post_TotalR` | buff 后总 reward，等于 `post_speedup_shaped_reward + post_speedup_terminal_bonus`。 |
+| `train_pre_speedup_shaped_reward` | `Pre_ShapedR` | buff 前 shaped reward，不含终局 bonus / penalty。 |
+| `train_post_speedup_shaped_reward` | `Post_ShapedR` | buff 后 shaped reward，不含终局 bonus / penalty。 |
+| `train_pre_speedup_step_score_gain` | `Pre_StepGain` | buff 前 `step_score` 增量。 |
+| `train_post_speedup_step_score_gain` | `Post_StepGain` | buff 后 `step_score` 增量。 |
+| `train_pre_speedup_treasure_gain` | `Pre_TreaGain` | buff 前 `treasure_score` 增量。 |
+| `train_post_speedup_treasure_gain` | `Post_TreaGain` | buff 后 `treasure_score` 增量。 |
+| `train_pre_speedup_total_score_gain` | `Pre_TotalGain` | buff 前 `total_score` 增量。 |
+
+当前实现说明：
+- Train 组当前没有 `train_post_speedup_total_score_gain`，这是当前代码的真实状态。
+- Train 组数据来自 `EpisodeMetrics.as_train_monitor_dict()`。
+
+#### 环境指标组
+
+| 指标 | 面板名 | 含义 |
+| --- | --- | --- |
+| `total_score` | `得分` | 环境侧总得分。 |
+| `treasure_score` | `得分` | 环境侧宝箱得分。 |
+| `step_score` | `得分` | 环境侧步数得分。 |
+| `total_map` | `地图` | 环境上报的地图配置摘要值，用来观察当前地图池设置。 |
+| `map_random` | `地图` | 是否随机抽图，通常 `0/1`。 |
+| `max_step` | `步数` | 当前环境最大步数配置；面板展示名是 `max_steps`，但表达式实际读取 `max_step`。 |
+| `finished_steps` | `步数` | 当前局实际完成步数。 |
+| `total_treasure` | `宝箱` | 当前环境宝箱总数配置。 |
+| `treasures_collected` | `宝箱` | 当前局已收集宝箱数。 |
+| `flash_count` | `闪现` | 当前局已使用闪现次数。 |
+| `flash_cooldown` | `闪现` | 闪现冷却配置步数。 |
+| `total_buff` | `加速增益` | 当前环境 buff 总数配置。 |
+| `collected_buff` | `加速增益` | 当前局已拾取 buff 数。 |
+| `buff_refresh_time` | `加速增益` | buff 刷新/重生相关时间指标。 |
+| `monster_speed` | `怪物移动速度` | 当前怪物移动速度。 |
+| `monster_interval` | `怪物出现间隔` | 第二只怪物出现的配置步数。 |
+
+#### 训练损失组
+
+这一组不是按单局上报，而是 `Algorithm.learn()` 每约 `60` 秒节流上报一次。
+
+| 指标 | 面板名 | 含义 |
+| --- | --- | --- |
+| `reward` | `CumReward` | Learner 当前 batch 的样本 reward 均值，不是单局 score。 |
+| `total_loss` | `TotalLoss` | PPO 总损失：`vf_coef * value_loss + policy_loss - beta * entropy_loss`。 |
+| `value_loss` | `ValueLoss` | value head 拟合 `reward_sum` 的损失。 |
+| `policy_loss` | `PolicyLoss` | PPO clipped surrogate policy loss。 |
+| `entropy_loss` | `EntropyLoss` | 策略熵项，值越大说明分布越分散。 |
+| `grad_clip_norm` | `GradClipNorm` | 梯度总范数统计，由 `clip_grad_norm_` 返回。 |
+| `clip_frac` | `ClipFrac` | batch 中被 PPO clip 的样本比例。 |
+| `explained_var` | `ExplainedVar` | value 对 return 的解释度，越接近 `1` 越好。 |
+| `adv_mean` | `AdvMean` | advantage 标准化之前的 batch 均值。 |
+| `ret_mean` | `RetMean` | `reward_sum` 的 batch 均值，可理解为当前 return target 的平均水平。 |
+
+补充说明：
+- `approx_kl` 当前只写日志，没有做成 monitor 面板。
+- 当 `approx_kl > TARGET_KL` 时，当前 update 会被直接跳过。
+
+#### Val 组
+
+Val 组来自 `EpisodeRunner._build_val_monitor_data()`，是 eval 多局平均值。
+
+| 指标 | 面板名 | 含义 |
+| --- | --- | --- |
+| `val_reward` | `Reward` | 验证阶段总 reward 均值。 |
+| `val_total_score` | `TotalScore` | 验证阶段 `total_score` 均值。 |
+| `val_step_score` | `StepScore` | 验证阶段步数得分均值。 |
+| `val_treasure_score` | `TreasureScore` | 验证阶段宝箱得分均值。 |
+| `val_treasures_collected` | `Treasures` | 验证阶段收集宝箱数均值。 |
+| `val_episode_steps` | `Steps` | 验证阶段完成步数均值。 |
+| `val_speedup_reached` | `SpeedupReached` | 验证阶段拿到过 buff 的比例。 |
+| `val_pre_speedup_steps` | `Pre_Steps` | buff 前步数均值。 |
+| `val_post_speedup_steps` | `Post_Steps` | buff 后步数均值。 |
+| `val_pre_speedup_reward` | `Pre_TotalR` | buff 前总 reward 均值。 |
+| `val_post_speedup_reward` | `Post_TotalR` | buff 后总 reward 均值。 |
+| `val_pre_speedup_shaped_reward` | `Pre_ShapedR` | buff 前 shaped reward 均值。 |
+| `val_post_speedup_shaped_reward` | `Post_ShapedR` | buff 后 shaped reward 均值。 |
+| `val_pre_speedup_step_score_gain` | `Pre_StepGain` | buff 前 `step_score` 增量均值。 |
+| `val_post_speedup_step_score_gain` | `Post_StepGain` | buff 后 `step_score` 增量均值。 |
+| `val_pre_speedup_treasure_gain` | `Pre_TreaGain` | buff 前 `treasure_score` 增量均值。 |
+| `val_post_speedup_treasure_gain` | `Post_TreaGain` | buff 后 `treasure_score` 增量均值。 |
+| `val_pre_speedup_total_score_gain` | `Pre_TotalGain` | buff 前 `total_score` 增量均值。 |
+| `val_post_speedup_total_score_gain` | `Post_TotalGain` | buff 后 `total_score` 增量均值。 |
+| `val_pre_speedup_terminal_bonus` | `Pre_Terminal` | buff 前终局 bonus / penalty 均值。 |
+| `val_post_speedup_terminal_bonus` | `Post_Terminal` | buff 后终局 bonus / penalty 均值。 |
+| `val_post_speedup_terminated` | `Post_Terminated` | 拿到 buff 后仍然终止的比例。 |
+| `val_terminated_rate` | `TerminatedRate` | 被怪物抓到导致终止的比例。 |
+| `val_completed_rate` | `CompletedRate` | 存活到最大步数的比例。 |
+| `val_abnormal_truncated_rate` | `AbnormalTrunc` | 非终止但未达到 `max_step` 就被截断的比例。 |
+| `val_danger_level` | `Final_Danger` | 终局危险度均值，按终局时离最近怪物的距离归一化到 `[0,1]`。 |
+| `val_nearest_treasure_dist` | `Final_TreaDist` | 终局时最近宝箱距离均值，没有可用宝箱时记为 `-1`。 |
+
+如果你在平台里看不到 Val 曲线，优先检查：
+- 训练是否已经累计到 `50` 个 train episode。
+- eval 是否已经完整跑完 `10` 局。
+- `monitor.put_data(...)` 是否正常执行。
+
+### 12.3 算法与奖励超参数
+
+当前算法超参数定义在 `agent_ppo/conf/conf.py`。
+
+#### PPO / 优化相关
+
+| 参数 | 当前值 | 作用 | 调整建议 |
+| --- | --- | --- | --- |
+| `GAMMA` | `0.995` | 折扣因子，影响 return 与 GAE 的时间跨度。 | 想更看重长期存活可调大；训练抖动大、信用分配过长可略降。 |
+| `LAMDA` | `0.95` | GAE 系数，控制 bias / variance 权衡。 | 高一些更平滑但方差更大；低一些更稳定但偏差更大。 |
+| `INIT_LEARNING_RATE_START` | `0.0002` | Adam 学习率。 | loss 波动大或策略崩溃可先降；收敛太慢可谨慎升。 |
+| `BETA_START` | `0.003` | 初始熵系数。 | 开局探索不足可升；动作太随机可降。 |
+| `BETA_END` | `0.0005` | 熵系数衰减终点。 | 后期想保留更多探索可升；想更快收敛可降。 |
+| `BETA_DECAY_STEPS` | `4000` | 熵系数从 start 衰减到 end 的步数。 | 太快会过早贪心，太慢会长期随机。 |
+| `CLIP_PARAM` | `0.15` | PPO ratio clip 范围。 | 大一些更新更猛但更不稳；小一些更稳但学习慢。 |
+| `VF_COEF` | `1.0` | value loss 权重。 | value 学不动可升；value 压制 policy 可降。 |
+| `GRAD_CLIP_RANGE` | `0.5` | 梯度裁剪阈值。 | 梯度爆炸可降；更新过弱可略升。 |
+| `USE_ADVANTAGE_NORM` | `True` | 是否对 advantage 做标准化。 | 一般保持开启，更稳定。 |
+| `ADVANTAGE_NORM_EPS` | `1e-8` | advantage 标准化数值稳定项。 | 一般不需要改。 |
+| `TARGET_KL` | `0.015` | 超过该 KL 时直接跳过本次 update。 | 经常跳过说明步子过大，可降学习率或减小 clip；完全不触发可视情况略升。 |
+
+#### Reward shaping 相关
+
+| 参数 | 当前值 | 作用 | 调整建议 |
+| --- | --- | --- | --- |
+| `SURVIVE_REWARD` | `0.005` | 每步基础生存奖励。 | 太小会不重视存活，太大可能只学会苟活。 |
+| `DIST_SHAPING_COEF` | `0.05` | 远离最近怪物的 shaping 系数。 | 提高会更保守躲怪，过大可能不愿意追宝箱。 |
+| `TREASURE_REWARD` | `1.0` | 每拿到一个宝箱的即时奖励。 | 提高会更激进拿宝箱。 |
+| `BUFF_REWARD` | `0.3` | 每拿到一个 buff 的即时奖励。 | 想强化拿 buff 行为可升。 |
+| `TREASURE_DIST_COEF` | `0.08` | 朝当前目标宝箱靠近时的 shaping 系数。 | 提高会更主动走向宝箱。 |
+| `EXIT_DIST_COEF` | `0.04` | 当前没有宝箱目标时，朝 buff 目标靠近的引导系数。 | 想更积极拿 buff 可升。 |
+| `FLASH_ESCAPE_REWARD_COEF` | `0.05` | 在危险区使用闪现并拉开距离时的奖励系数。 | 闪现利用率低可升；滥用闪现可降。 |
+| `HIT_WALL_PENALTY` | `0.05` | 撞墙/无效移动惩罚。 | 卡墙严重可升。 |
+| `REVISIT_PENALTY_COEF` | `0.02` | 重访区域惩罚系数。 | 原地绕圈严重可升；探索过散可降。 |
+| `REVISIT_WINDOW_SIZE` | `3` | 计算重访强度时使用的局部窗口大小。 | 想让“重复走位”惩罚覆盖更广可升。 |
+| `TERMINATED_PENALTY` | `-12.0` | 被怪物抓到时的终局惩罚。 | 想更强压制送死行为可调得更负。 |
+| `TRUNCATED_BONUS` | `8.0` | 存活到 `max_step` 的终局奖励。 | 想更强调“活满全程”可升。 |
+
+#### 轻量探索奖励相关
+
+| 参数 | 当前值 | 作用 | 调整建议 |
+| --- | --- | --- | --- |
+| `ENABLE_EXPLORE_BONUS` | `True` | 是否启用基于网格新颖度的探索奖励。 | 探索逻辑明显干扰主目标时可先关掉。 |
+| `EXPLORE_BONUS_SCALE` | `0.01` | 探索 bonus 的整体缩放。 | 太小几乎没效果，太大可能压过主奖励。 |
+| `EXPLORE_BONUS_GRID_SIZE` | `16` | 把地图划分成多少网格来统计新颖度。 | 更大更细粒度，更小更粗粒度。 |
+| `EXPLORE_BONUS_MIN_RATIO` | `0.25` | 新颖度低于该阈值时不给 bonus。 | 想更严格只奖励新区域可升。 |
+
+#### 结构超参数
+
+| 参数 | 当前值 | 作用 | 调整建议 |
+| --- | --- | --- | --- |
+| `LOCAL_MAP_SIZE` | `11` | 局部语义地图边长。 | 想扩大局部观察范围可升，但会直接增大输入维度。 |
+| `LOCAL_MAP_CHANNEL` | `4` | 局部语义地图通道数。 | 只有在你真的改了语义地图编码时才需要改。 |
+| `HERO_ENCODER_DIM` | `32` | hero 特征编码维度。 | hero 信息表达不足可升。 |
+| `MONSTER_ENCODER_DIM` | `64` | 两只怪物联合编码维度。 | 需要更强避怪建模可升。 |
+| `MAP_ENCODER_DIM` | `128` | 局部地图 CNN 编码输出维度。 | 地图策略不足可升，但成本会上去。 |
+| `CONTROL_ENCODER_DIM` | `32` | legal action + progress 编码维度。 | 控制相关信息表达不足可升。 |
+| `FUSION_HIDDEN_DIM` | `128` | 最终融合 backbone 隐层宽度。 | 模型容量不足可升，过拟合或太慢可降。 |
+
+结构改动时一定注意：
+- `LOCAL_MAP_SIZE * LOCAL_MAP_SIZE * LOCAL_MAP_CHANNEL` 必须和 `FEATURES` 里的地图段维度保持一致；当前 `11 * 11 * 4 = 484`。
+- 如果你改了局部地图尺寸或通道，必须同步检查 `FEATURES`、preprocessor 输出和 `model.py` 中的 `map_shape`。
+
+### 12.4 系统训练参数
+
+系统训练参数在 `conf/configure_app.toml`，它们不是 PPO 公式的一部分，但会直接影响训练节奏。
+
+| 参数 | 当前值 | 作用 | 设置建议 |
+| --- | --- | --- | --- |
+| `replay_buffer_capacity` | `10000` | 样本池容量。 | 太小样本太新、相关性高；太大则刷新慢。 |
+| `preload_ratio` | `1.0` | 样本池装到多少比例后开始训练。 | 想更早启动训练可降，但初期会更噪。 |
+| `reverb_remover` | `reverb.selectors.Fifo` | 样本池淘汰策略。 | 一般保留 `Fifo`，让老样本自然淘汰。 |
+| `reverb_sampler` | `reverb.selectors.Uniform` | Learner 采样策略。 | `Uniform` 通常更稳；想按时间顺序采样才考虑 `Fifo`。 |
+| `reverb_rate_limiter` | `MinSize` | 插入/采样限流策略。 | 采样速度明显快于产样时才考虑 `SampleToInsertRatio`。 |
+| `reverb_samples_per_insert` | `5` | 每条样本最多复用次数，仅 `SampleToInsertRatio` 生效。 | 想严格控制复用率时再调。 |
+| `reverb_error_buffer` | `5` | 复用率约束缓冲区，仅 `SampleToInsertRatio` 生效。 | 一般配合上一个参数一起调。 |
+| `train_batch_size` | `2048` | Learner 单次训练 batch 大小。 | 显存/吞吐允许时可升；不稳定或资源不够可降。 |
+| `dump_model_freq` | `100` | 模型导出频率。 | 太频繁会增加 I/O，太低则中间检查点少。 |
+| `model_file_sync_per_minutes` | `1` | Actor 拉取最新模型的分钟级频率。 | 太慢会用旧策略，太快会增加同步开销。 |
+| `modelpool_max_save_model_count` | `1` | 模型池保留的模型份数。 | 想保留更多中间版本可升。 |
+| `preload_model` | `false` | 是否从已有 checkpoint 热启动。 | 做迁移/续训时开启。 |
+| `preload_model_dir` | `"{agent_name}/ckpt"` | 预加载模型目录。 | 通常不改目录结构就保持默认。 |
+| `preload_model_id` | `1000` | 预加载 checkpoint 的 step id。 | 热启动时改成目标 checkpoint 对应 step。 |
+
+### 12.5 环境参数
+
+环境参数分别在 `agent_ppo/conf/train_env_conf.toml` 与 `agent_ppo/conf/eval_env_conf.toml`。
+
+#### 当前训练/验证配置
+
+| 参数 | 训练值 | 验证值 | 含义与设置建议 |
+| --- | --- | --- | --- |
+| `map` | `[1,2,3,4,5,6,7,8]` | `[9,10]` | 训练图和验证图要尽量分离，验证图不要与训练图重叠。 |
+| `map_random` | `false` | `true` | 是否随机抽图。训练想更可控可关，想增强随机性可开；验证通常建议开。 |
+| `treasure_count` | `10` | `10` | 宝箱数量。高一些奖励更密，低一些探索更难。 |
+| `buff_count` | `2` | `2` | buff 数量。高一些更容易拿到加速。 |
+| `buff_cooldown` | `200` | `200` | buff 被拾取后的刷新步数。越小越容易重复拿 buff。 |
+| `talent_cooldown` | `100` | `100` | 闪现冷却步数。越小环境越宽松。 |
+| `monster_interval` | `300` | `300` | 第二只怪物出现步数。越大前期越简单。 |
+| `monster_speedup` | `500` | `500` | 怪物加速生效步数。越大中后期越简单。 |
+| `max_step` | `1000` | `1000` | 单局最大步数。越大 horizon 越长，训练也更慢。 |
+
+环境参数调节经验：
+- 先固定训练图和验证图，不要一边改算法一边改地图划分。
+- 如果你在做 reward / feature / network 迭代，优先保持 `max_step`、`monster_interval`、`monster_speedup` 不变。
+- 想做 curriculum，可以先改训练环境，不要先改验证环境。
+- 评估配置最好比训练配置更稳定，避免把“环境波动”误判成“算法波动”。
+
+### 12.6 截图驱动的训练/测试归档规范
+
+正式训练和测试结束后，人不需要再额外填写模型名或截图说明，只需要把截图放到对应算法文档目录的 `screenshots/`：
+
+| 项目 | 规范 |
+| --- | --- |
+| 训练/测试截图 | 统一放在 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`。训练全部曲线截图和测试截图都放这里。 |
+| 图片文件名 | 图片文件名（去掉扩展名）视作上传到官网的模型全称。 |
+| AI 归档检查 | AI 只检测 `screenshots/` 中是否存在图片，不核验截图真伪，也不要求人再额外补填模型名、截图位置或截图说明。 |
+
+推荐直接对 AI 说：
+- `我已经把训练/测试截图放到 GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/ 了`
+- `图片文件名（去掉扩展名）就是上传到官网的模型全称`
+- `你只要检测到有图就继续归档`
 
 ---
