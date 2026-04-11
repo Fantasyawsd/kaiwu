@@ -53,6 +53,25 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 - `开发文档/腾讯开悟强化学习框架/分布式计算框架.md`
 - `开发文档/腾讯开悟强化学习框架/监控与日志.md`
 
+## 必读外部参考源码
+
+如果本轮设计涉及参考外部调研算法（如 `hok_prelim`），必须同时查阅：
+
+1. `GLOBAL_DOCS/算法调研.md` - 了解外部算法的整体说明
+2. `reference_algos/<算法名>/README.md` - 该算法的详细说明
+3. `reference_algos/<算法名>/code/` 下的核心源码文件：
+   - `agent.py` - Agent 接口与动作处理
+   - `feature/` 或 `feature/state_manager.py` - 特征处理与奖励设计
+   - `model/model.py` - 网络结构定义
+   - `algorithm/algorithm.py` - 训练逻辑
+   - `workflow/train_workflow.py` - 训练流程
+
+**设计要求**：
+
+- 明确标注哪些思路来自外部参考源码
+- 说明哪些组件可直接迁移、哪些需要适配、哪些不适合本项目
+- 给出外部源码到本项目 `agent_ppo/` 的映射关系
+
 ## 必须确认的源码入口
 
 在设计里至少定位到这些文件：
@@ -122,7 +141,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 | 类别 | 参数 |
 | --- | --- |
 | 观测/动作 | `FEATURES`, `FEATURE_SPLIT_SHAPE`, `FEATURE_LEN`, `DIM_OF_OBSERVATION`, `ACTION_NUM`, `VALUE_NUM` |
-| PPO 核心 | `GAMMA`, `LAMDA`, `INIT_LEARNING_RATE_START`, `CLIP_PARAM`, `VF_COEF`, `GRAD_CLIP_RANGE`, `TARGET_KL` |
+| RL 核心超参 | `GAMMA`, `LAMDA`, `INIT_LEARNING_RATE_START`, `CLIP_PARAM`, `VF_COEF`, `GRAD_CLIP_RANGE`, `TARGET_KL` 等 |
 | 稳定化 | `USE_ADVANTAGE_NORM`, `ADVANTAGE_NORM_EPS` |
 | 熵系数 | `BETA_START`, `BETA_END`, `BETA_DECAY_STEPS` |
 | 奖励 | `SURVIVE_REWARD`, `DIST_SHAPING_COEF`, `ENABLE_EXPLORE_BONUS`, `EXPLORE_BONUS_SCALE`, `EXPLORE_BONUS_GRID_SIZE`, `EXPLORE_BONUS_MIN_RATIO` |
@@ -137,7 +156,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 | 观测特征、合法动作、即时奖励 | `agent_ppo/feature/preprocessor.py` |
 | 样本结构、GAE、回报计算 | `agent_ppo/feature/definition.py` |
 | 模型结构 | `agent_ppo/model/model.py` |
-| PPO loss 与优化 | `agent_ppo/algorithm/algorithm.py` |
+| 算法 loss 与优化 | `agent_ppo/algorithm/algorithm.py` |
 | Agent 接口与推理/训练调用 | `agent_ppo/agent.py` |
 | 训练流程、终局奖励、监控上报 | `agent_ppo/workflow/train_workflow.py` |
 
@@ -198,6 +217,26 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 ## 规则
 
 - 不跳过开发文档依据
-- 不给“只改奖励/只调超参”这类空泛建议，必须落到参数名和文件路径
+- 不给”只改奖励/只调超参”这类空泛建议，必须落到参数名和文件路径
 - 一轮设计默认只验证一个主方向
 - 若设计会改 `ACTION_NUM`、特征维度或样本结构，必须显式说明联动修改链路
+
+---
+
+## 下一步行动（执行后必须输出）
+
+设计完成后，明确告诉用户：
+
+```markdown
+## 设计完成 - 下一步
+
+设计已记录到 `DEV_MEMORY/NOW.md`。
+
+接下来请执行：
+
+1. **检查设计完整性**：确认所有参数表、改动文件清单、风险项已填写
+2. **切到 feature 分支**（如尚未）：`git checkout -b feature/<算法名>`
+3. **开始实现**：使用 `/kaiwu-algo-implementation`
+
+如果设计涉及参考 `reference_algos/` 中的外部算法，实现阶段会引导你查阅具体源码。
+```

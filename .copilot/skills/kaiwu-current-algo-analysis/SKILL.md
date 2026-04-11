@@ -64,7 +64,7 @@ allowed-tools: Read, Grep, Glob
 
 至少概括：
 
-- 算法框架，例如 PPO / Actor-Critic
+- 算法框架，例如 PPO / DQN / SAC / A3C / Actor-Critic
 - 特征设计
 - 动作空间设计
 - 奖励设计
@@ -76,7 +76,7 @@ allowed-tools: Read, Grep, Glob
 重点从 `agent_ppo/conf/conf.py` 提炼：
 
 - 观测维度与动作维度
-- PPO 核心超参
+- RL 核心超参
 - 奖励相关超参
 - 编码器或网络结构相关超参
 
@@ -121,7 +121,7 @@ allowed-tools: Read, Grep, Glob
 | 特征 / 合法动作 / 即时奖励 | `agent_ppo/feature/preprocessor.py` |
 | 样本结构 / GAE | `agent_ppo/feature/definition.py` |
 | 模型结构 | `agent_ppo/model/model.py` |
-| PPO loss / 优化 | `agent_ppo/algorithm/algorithm.py` |
+| 算法 loss / 优化 | `agent_ppo/algorithm/algorithm.py` |
 | Agent 接口 | `agent_ppo/agent.py` |
 | 超参数 | `agent_ppo/conf/conf.py` |
 | 环境配置 | `agent_ppo/conf/train_env_conf.toml` |
@@ -171,7 +171,26 @@ allowed-tools: Read, Grep, Glob
 ## 规则
 
 - 默认做快速分析，不默认展开全部源码细节
-- 默认优先总结“设计、超参、环境、配置”
+- 默认优先总结”设计、超参、环境、配置”
 - 只有在文档或配置不够时，才继续下钻源码
 - 若算法总表、正式算法文档、配置文件、源码不一致，必须明确指出
 - 只读分析，不改代码
+
+---
+
+## 下一步行动（执行后必须输出）
+
+根据分析结果，明确告诉用户：
+
+```markdown
+## 分析完成 - 建议下一步
+
+| 场景 | 推荐行动 |
+|------|---------|
+| 当前算法设计完整但未实现 | 使用 `/kaiwu-algo-implementation` 开始实现 |
+| 当前算法已实现但需优化 | 先修改代码，然后跑 `python train_test.py` 验证 |
+| 需要修改超参数/环境配置 | 编辑对应配置文件，然后重新训练 |
+| 训练已完成需要评估效果 | 人工查看官方训练监控，按 `算法完整名 + 训练步数` 上传模型做 5 次官方评估，并将训练截图与最终结果截图放入对应算法文档目录的 `screenshots/` |
+| 发现算法设计有问题 | 更新 `DEV_MEMORY/NOW.md`，然后 `/kaiwu-algo-implementation` |
+| 算法已稳定，准备归档 | 使用 `/kaiwu-memory-archive` 完成归档 |
+```

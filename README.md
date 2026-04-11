@@ -45,7 +45,7 @@ git checkout -b feature/<topic>
 ├── GLOBAL_DOCS/            # 全局稳定知识库
 │   ├── 算法总表.md         # 已实现算法清单（AI 维护）
 │   ├── 算法调研.md         # 外部调研候选方向（人维护）
-│   └── 算法文档/           # 正式算法文档（算法名_时间.md 命名）
+│   └── 算法文档/           # 正式算法文档目录（每个算法为一个文件夹，内含 README.md 与 screenshots/；截图目录存放训练监控与官方评估结果）
 ├── DEV_MEMORY/             # 当前开发状态记忆（用于断线重连与快速接手）
 │   └── NOW.md              # 当前要实现什么、做到哪一步、下一步做什么
 ├── .claude/skills/         # Repo-local Claude Code skills
@@ -64,14 +64,16 @@ git checkout -b feature/<topic>
 
 ### agent_ppo/ — 正式算法实现目录
 
+> **注意**：`agent_ppo/` 是目录名（源于最初实现为 PPO），但**不限制必须使用 PPO 算法**。你可以在该目录下实现任何 RL 算法（DQN、SAC、A3C、PPO 等），只要保持接口兼容即可。
+
 | 文件/目录 | 功能说明 |
 |-----------|----------|
-| `agent.py` | Agent 主类，封装与环境的交互接口。负责特征预处理、动作采样（根据策略网络输出概率选择动作）、模型推理调用。是算法与外部环境的桥梁。 |
-| `algorithm/` | PPO 算法核心实现，包含损失函数计算（策略损失、价值损失、熵奖励）、梯度更新、学习率调度。 |
-| `conf/` | 配置目录。`conf.py` 定义算法超参数（学习率、clip 范围、epoch 数等）；`train_env_conf.toml` 定义训练环境参数（地图配置、初始怪物数、宝箱数等）。 |
-| `feature/` | 特征工程目录。`preprocessor.py` 处理原始环境观测到模型输入特征的转换，包含奖励计算；`definition.py` 定义样本结构、GAE（广义优势估计）计算、回报计算。 |
-| `model/` | 神经网络定义。`model.py` 定义 Actor-Critic 网络结构，包括策略头（输出动作概率）和价值头（输出状态价值估计）。 |
-| `workflow/` | 训练流程编排。`train_workflow.py` 实现完整的训练循环：数据收集、模型更新、checkpoint 保存、训练指标上报。 |
+| `agent.py` | Agent 主类，封装与环境的交互接口。负责特征预处理、动作采样、模型推理调用。 |
+| `algorithm/` | 算法核心实现，包含损失函数计算、梯度更新、学习率调度。可以是 PPO、DQN、SAC 等任意算法。 |
+| `conf/` | 配置目录。`conf.py` 定义算法超参数；`train_env_conf.toml` 定义训练环境参数。 |
+| `feature/` | 特征工程目录。`preprocessor.py` 处理观测到特征的转换，包含奖励计算；`definition.py` 定义样本结构、GAE 计算、回报计算。 |
+| `model/` | 神经网络定义。`model.py` 定义网络结构（根据所用算法可以是 Actor-Critic、Q-Network 等）。 |
+| `workflow/` | 训练流程编排。`train_workflow.py` 实现训练循环：数据收集、模型更新、checkpoint 保存、训练指标上报。 |
 
 ### conf/ — 平台级配置
 
@@ -86,7 +88,7 @@ git checkout -b feature/<topic>
 | 目录/文件 | 功能说明 |
 |-----------|----------|
 | `开发文档/` | 官方开发文档，包含环境规则说明、数据协议定义、框架接口文档。AI 查询环境相关问题优先查阅此处。 |
-| `GLOBAL_DOCS/` | 全局稳定知识库。`算法总表.md` 记录所有已实现算法的状态和性能；`算法调研.md` 记录待调研的候选方向；`算法文档/` 存放各算法的详细实现文档。 |
+| `GLOBAL_DOCS/` | 全局稳定知识库。`算法总表.md` 记录所有已实现算法的状态和性能；`算法调研.md` 记录待调研的候选方向；`算法文档/` 为各算法的归档目录，每个算法使用单独文件夹存放 `README.md`，并在 `screenshots/` 中归档训练监控截图与官方评估结果截图。 |
 | `DEV_MEMORY/NOW.md` | 当前开发状态记忆。记录本轮要实现的内容、当前进度、下一步计划。用于 AI 断线重连后快速恢复上下文。 |
 | `reference_algos/` | 外部参考算法源码目录。存放调研得到的第三方算法完整实现（如 `hok_prelim/`），供设计/实现阶段参考借鉴。**不直接作为训练入口**。 |
 
@@ -128,6 +130,4 @@ agent_ppo/workflow/train_workflow.py    # 训练循环与模型保存
 ```
 
 ---
-
-
 
