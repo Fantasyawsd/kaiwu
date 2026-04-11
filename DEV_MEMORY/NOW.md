@@ -11,7 +11,7 @@
 - 任务目标：
   在 Gorge Chase 赛题中控制鲁班七号躲避怪物、收集宝箱并尽可能存活到 `max_step=1000`。
 - 算法框架：
-  保持 `agent_ppo/` 现有 PPO Actor-Critic 训练链路，不切换为 DDQN。
+  保持 `agent_ppo/` 现有 PPO Actor-Critic 训练链路。
 - 本轮核心改动：
   - 动作空间从 8 扩展到 16，正式接入环境原生闪现动作。
   - 观测从 40 维扩展到 528 维，引入 `4x11x11` 局部语义地图。
@@ -273,7 +273,7 @@ BETA_END = 0.0005
 
 | 参数 | 值 | 说明 |
 | --- | --- | --- |
-| `map` | `[1..10]` | 多图训练 |
+| `map` | `[1..8]` | 训练地图（1-8），测试地图（9-10） |
 | `map_random` | `false` | 按顺序训练 |
 | `treasure_count` | `10` | 保持满宝箱场景 |
 | `buff_count` | `2` | 保持双 buff 场景 |
@@ -307,18 +307,27 @@ BETA_END = 0.0005
 文件：`agent_ppo/workflow/train_workflow.py`
 
 - `workflow` 主循环：
-  - 读取 `train_env_conf.toml`
+  - 读取 `train_env_conf.toml` 和 `eval_env_conf.toml`
   - 创建 `EpisodeRunner`
   - 每拿到一局 `collector` 后交给 `agent.send_sample_data`
   - 每 30 分钟保存一次模型
+- **交叉验证循环**（训练-评估交替）：
+  - 训练地图：`[1, 2, 3, 4, 5, 6, 7, 8]`（`train_env_conf.toml`）
+  - 测试地图：`[9, 10]`（`eval_env_conf.toml`）
+  - 每 `50` 个训练 episode 后，运行 `10` 个测试 episode
+  - 评估模式下：
+    - 使用测试地图配置
+    - 不上报 monitor 训练指标
+    - 不产生训练样本（不用于模型更新）
+  - 日志标记：`[TRAIN]` / `[EVAL]` / `[GAMEOVER][TRAIN]` / `[GAMEOVER][EVAL]`
 - episode 流程：
-  - `env.reset`
+  - `env.reset`（根据模式切换配置）
   - `agent.reset`
   - `agent.load_model(id="latest")`
   - `observation_process -> predict -> action_process -> env.step`
   - 每步把 `reward`, `reward_terms`, `value`, `prob` 组织成 `SampleData`
   - 对局结束后叠加终局奖励并做 `sample_process`
-- 监控上报：
+- 监控上报（仅训练模式）：
   - `reward`
   - `episode_steps`
   - `episode_cnt`
@@ -342,7 +351,8 @@ BETA_END = 0.0005
 
 ## 11. 待训练补充项
 
-- 正式训练任务 ID：待补充
-- 正式训练得分：待补充
-- 关键监控结论：待补充
-- 是否进入归档：待正式训练与训练分析后决定
+- 正式训练得分：800分左右
+- 官网评估模型命名：ppo+taichu_4k
+- 10 张开放地图得分：待补充
+- 最终评估结果截图：待补充（放入对应算法文档目录的 `screenshots/`）
+- 是否进入归档：待正式训练与人工训练结果整理后决定

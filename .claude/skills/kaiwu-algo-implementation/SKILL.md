@@ -140,33 +140,56 @@ python3 train_test.py
 - smoke test 结果
 - 尚未做的训练事项
 
-### Step 6：把 NOW.md 整理成算法文档初稿
+### Step 6：创建算法文档目录并生成初稿
 
 这是算法实现的最后一步，必须执行。
 
-要求：
+#### 步骤 6.1：预创建算法文档目录
 
-- 把 `DEV_MEMORY/NOW.md` 从过程性记录，整理成“算法文档初稿”结构
+提前创建训练结果存放目录，方便后续人工截图直接放入：
+
+```bash
+mkdir -p GLOBAL_DOCS/算法文档/<算法完整名>/screenshots
+```
+
+#### 步骤 6.2：生成算法文档初稿
+
+在 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 生成初稿：
+
 - 内容参考 `GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md`
-- 只保留实现层面的稳定信息
-- 先不要写真实训练结果、训练得分、训练结论
-- 训练相关内容留给后续“人工训练结果整理、官网评估”和“信息归档”阶段
+- 把 `DEV_MEMORY/NOW.md` 从过程性记录整理成正式结构
+- 只保留实现层面的稳定信息（特征、模型、奖励、超参数等）
+- 明确标注「待训练补充项」
+- **不编造训练结果、训练得分、训练结论**
 
-可以选择两种做法：
+#### 步骤 6.3：同步更新 NOW.md
 
-1. 直接把 `NOW.md` 改写成算法文档初稿格式
-2. 在 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 先生成初稿，同时创建 `screenshots/` 目录，并在 `NOW.md` 保留简版指针和本轮状态；该目录后续用于存放训练监控截图与官方评估结果截图
+在 `NOW.md` 中：
+- 保留简版实现记录和本轮状态
+- 添加指针：`算法文档初稿位置：GLOBAL_DOCS/算法文档/<算法完整名>/README.md`
+- 添加指针：`截图目录：GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`
 
-若未明确要求，优先采用第 1 种，即先把 `NOW.md` 整理成算法文档初稿。
+#### 算法文档目录结构
+
+```
+GLOBAL_DOCS/算法文档/<算法完整名>/
+├── README.md          # 算法文档初稿（训练结果部分留空/标注待补充）
+└── screenshots/       # 空目录，训练完成后人工放入：
+                       #   - 训练监控截图
+                       #   - 官网评估结果截图
+```
 
 ## 算法文档初稿模板
 
+生成到 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md`：
+
 ```markdown
-# <算法完整名> 算法文档初稿
+# <算法完整名> 算法文档
 
 **文档版本**：<算法完整名>
 **记录日期**：<YYYY-MM-DD>
-**当前状态**：已实现 / smoke test 已通过 / 暂无正式训练结果
+**当前状态**：已实现；smoke test 通过；暂无正式训练得分
+**截图目录**：`GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`（训练完成后人工放入）
 
 ---
 
@@ -347,20 +370,39 @@ python3 train_test.py
 ### 场景 2：Smoke test 通过，算法文档初稿已完成
 ```
 下一步：提交代码并准备训练
-1. 提交代码：`git add -A && git commit -m “feat(scope): 实现 xxx 算法”`
-   
+
+1. 确认目录结构已创建：
+   GLOBAL_DOCS/算法文档/<算法完整名>/
+   ├── README.md          # 算法文档初稿
+   └── screenshots/       # 空目录，用于存放训练截图
+
+2. 提交代码：
+   git add -A
+   git commit -m “feat(<scope>): <算法完整名>”
+   git push -u origin feature/<分支名>
+
    示例 commit message：
-   ```
-   feat(preprocessor): 添加宝箱距离奖励
-   
-   - 改动目的：优化奖励 shaping
-   - 涉及文件：agent_ppo/feature/preprocessor.py
-   - 接口变化：无
+   ─────────────────────────────────────────
+   feat(ppo): agent_ppo_20260410_hok_memory_map_v1
+
+   - 实现内容：接入 HOK 风格记忆地图、16 维动作空间、分层奖励
+   - 关键设计：CNN 地图编码、目标记忆器、闪现脱险奖励
+   - 涉及文件：agent_ppo/conf/conf.py, agent_ppo/feature/preprocessor.py, agent_ppo/model/model.py
    - 烟测状态：通过
-   ```
-2. 推送到远端：`git push -u origin feature/<分支名>`
+   - 训练状态：暂无正式训练得分
+   - 算法文档：GLOBAL_DOCS/算法文档/agent_ppo_20260410_hok_memory_map_v1/README.md
+   ─────────────────────────────────────────
+
 3. 在平台上启动正式训练
-4. 训练完成后人工截图训练监控，按 `<算法完整名>_<训练步数>` 上传模型做 5 次官方评估，整理 10 张地图得分与最终结果截图，再决定下一步
+
+4. 训练完成后人工操作：
+   - 查看官方训练监控并截图 → 放入 screenshots/
+   - 按 `<算法完整名>_<训练步数>` 上传模型
+   - 对开放 10 图做 5 次官方评估
+   - 将评估结果截图 → 放入 screenshots/
+   - 在 README.md 中补充训练得分和 10 张地图得分
+
+5. 截图和结果整理完毕后，执行 /kaiwu-memory-archive 完成归档
 ```
 
 ### 场景 3：算法文档初稿尚未完成

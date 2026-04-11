@@ -1,12 +1,13 @@
 [env_conf]
-# Maps used for training. Customize by keeping only desired map IDs, e.g. [1, 2] for maps 1 and 2.
-# 训练使用的地图。可自定义选择期望用来训练的地图，如只期望使用1、2号地图训练数组内仅保留[1,2]即可。
-# 当前划分：1-8 为训练地图，9-10 为测试地图（评估泛化性）
-map = [1, 2, 3, 4, 5, 6, 7, 8]
+# Maps used for evaluation/testing. These maps should NOT overlap with training maps.
+# 评估/测试使用的地图。这些地图应与训练地图不重叠，用于验证泛化能力。
+# 训练地图: [1, 2, 3, 4, 5, 6, 7, 8]
+# 测试地图: [9, 10]
+map = [9, 10]
 
 # Whether to randomly select maps. true = randomly pick one from configured maps per episode, false = used sequentially.
-# 是否随机抽取地图。布尔值。true表示每局从配置的地图中随机抽取一张，false表示按顺序抽取地图训练。
-map_random = false
+# 是否随机抽取地图。布尔值。true表示每局从配置的地图中随机抽取一张，false表示按顺序抽取地图。
+map_random = true
 
 # Number of treasures. Range: 0~10. When less than 10, spawn points are randomly chosen from available positions.
 # 宝箱数量。可配置范围为0～10。当配置小于10时，将从每张地图可生成宝箱的点位随机选择对应数量的点位生成宝箱。
@@ -21,7 +22,7 @@ buff_count = 2
 buff_cooldown = 200
 
 # Talent skill cooldown in steps. The skill enters cooldown after being cast. Range: 50~2000.
-# 技能冷却步数。技能在被施放后会进入冷却状态，冷却状态结束后重新激活。可配置范围为50~2000。
+# 技能冷却步数。技能在被施放后会进入冷却状态，冷却状态结束后重新激活。可配置范围为50～2000。
 talent_cooldown = 100
 
 # Steps before the second monster appears. Range: -1, 11~2000. -1 means random within 11~2000.
