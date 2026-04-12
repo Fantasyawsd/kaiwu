@@ -10,6 +10,29 @@ def build_monitor():
 
     return (
         monitor.title("Gorge Chase PPO")
+        .add_group(group_name="Progress", group_name_en="algorithm")
+        .add_panel(name="EpisodeID", name_en="current_episode_id", type="line")
+        .add_metric(metrics_name="current_episode_id", expr="avg(current_episode_id{})")
+        .end_panel()
+        .add_panel(name="CompletedEP", name_en="completed_episode_count", type="line")
+        .add_metric(
+            metrics_name="completed_episode_count",
+            expr="avg(completed_episode_count{})",
+        )
+        .end_panel()
+        .add_panel(name="EpisodeStep", name_en="current_episode_step", type="line")
+        .add_metric(metrics_name="current_episode_step", expr="avg(current_episode_step{})")
+        .end_panel()
+        .add_panel(name="IsEval", name_en="current_episode_is_eval", type="line")
+        .add_metric(
+            metrics_name="current_episode_is_eval",
+            expr="avg(current_episode_is_eval{})",
+        )
+        .end_panel()
+        .add_panel(name="TrainTotalEP", name_en="train_episode_total", type="line")
+        .add_metric(metrics_name="train_episode_total", expr="avg(train_episode_total{})")
+        .end_panel()
+        .end_group()
         .add_group(group_name="Train", group_name_en="algorithm")
         .add_panel(name="Reward", name_en="train_reward", type="line")
         .add_metric(metrics_name="train_reward", expr="avg(train_reward{})")
@@ -31,6 +54,12 @@ def build_monitor():
         .end_panel()
         .add_panel(name="SpeedupReached", name_en="train_speedup_reached", type="line")
         .add_metric(metrics_name="train_speedup_reached", expr="avg(train_speedup_reached{})")
+        .end_panel()
+        .add_panel(name="TimeToSpeedup", name_en="train_phase_time_to_speedup", type="line")
+        .add_metric(
+            metrics_name="train_phase_time_to_speedup",
+            expr="avg(train_phase_time_to_speedup{})",
+        )
         .end_panel()
         .add_panel(name="Pre_Steps", name_en="train_pre_speedup_steps", type="line")
         .add_metric(metrics_name="train_pre_speedup_steps", expr="avg(train_pre_speedup_steps{})")
@@ -54,6 +83,81 @@ def build_monitor():
         .add_metric(
             metrics_name="train_post_speedup_shaped_reward",
             expr="avg(train_post_speedup_shaped_reward{})",
+        )
+        .end_panel()
+        .add_panel(name="EarlyLootB", name_en="train_early_loot_collection_bonus", type="line")
+        .add_metric(
+            metrics_name="train_early_loot_collection_bonus",
+            expr="avg(train_early_loot_collection_bonus{})",
+        )
+        .end_panel()
+        .add_panel(name="EarlyLootS", name_en="train_early_loot_stall_penalty", type="line")
+        .add_metric(
+            metrics_name="train_early_loot_stall_penalty",
+            expr="avg(train_early_loot_stall_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="Pre_BufferR", name_en="train_pre_speedup_buffer_reward", type="line")
+        .add_metric(
+            metrics_name="train_pre_speedup_buffer_reward",
+            expr="avg(train_pre_speedup_buffer_reward{})",
+        )
+        .end_panel()
+        .add_panel(name="Monster2_P", name_en="train_second_monster_pressure_penalty", type="line")
+        .add_metric(
+            metrics_name="train_second_monster_pressure_penalty",
+            expr="avg(train_second_monster_pressure_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="FlashDir", name_en="train_flash_direction_reward", type="line")
+        .add_metric(
+            metrics_name="train_flash_direction_reward",
+            expr="avg(train_flash_direction_reward{})",
+        )
+        .end_panel()
+        .add_panel(name="FlashWall", name_en="train_flash_through_wall_reward", type="line")
+        .add_metric(
+            metrics_name="train_flash_through_wall_reward",
+            expr="avg(train_flash_through_wall_reward{})",
+        )
+        .end_panel()
+        .add_panel(name="FlashWaste", name_en="train_flash_waste_penalty", type="line")
+        .add_metric(
+            metrics_name="train_flash_waste_penalty",
+            expr="avg(train_flash_waste_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="HitWall", name_en="train_hit_wall_penalty", type="line")
+        .add_metric(metrics_name="train_hit_wall_penalty", expr="avg(train_hit_wall_penalty{})")
+        .end_panel()
+        .add_panel(name="Stagnation", name_en="train_stagnation_penalty", type="line")
+        .add_metric(
+            metrics_name="train_stagnation_penalty",
+            expr="avg(train_stagnation_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="Oscillation", name_en="train_oscillation_penalty", type="line")
+        .add_metric(
+            metrics_name="train_oscillation_penalty",
+            expr="avg(train_oscillation_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="MissTreasure", name_en="train_treasure_miss_penalty", type="line")
+        .add_metric(
+            metrics_name="train_treasure_miss_penalty",
+            expr="avg(train_treasure_miss_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="NoVisionMove", name_en="train_no_vision_patrol_bonus", type="line")
+        .add_metric(
+            metrics_name="train_no_vision_patrol_bonus",
+            expr="avg(train_no_vision_patrol_bonus{})",
+        )
+        .end_panel()
+        .add_panel(name="FirstTrea", name_en="train_time_to_first_treasure", type="line")
+        .add_metric(
+            metrics_name="train_time_to_first_treasure",
+            expr="avg(train_time_to_first_treasure{})",
         )
         .end_panel()
         .add_panel(name="Pre_StepGain", name_en="train_pre_speedup_step_score_gain", type="line")
@@ -80,10 +184,34 @@ def build_monitor():
             expr="avg(train_post_speedup_treasure_gain{})",
         )
         .end_panel()
+        .add_panel(name="Pre_TreaCnt", name_en="train_pre_speedup_treasures_collected", type="line")
+        .add_metric(
+            metrics_name="train_pre_speedup_treasures_collected",
+            expr="avg(train_pre_speedup_treasures_collected{})",
+        )
+        .end_panel()
+        .add_panel(name="Post_TreaCnt", name_en="train_post_speedup_treasures_collected", type="line")
+        .add_metric(
+            metrics_name="train_post_speedup_treasures_collected",
+            expr="avg(train_post_speedup_treasures_collected{})",
+        )
+        .end_panel()
+        .add_panel(name="Pre_TreaRate", name_en="train_pre_speedup_treasure_rate", type="line")
+        .add_metric(
+            metrics_name="train_pre_speedup_treasure_rate",
+            expr="avg(train_pre_speedup_treasure_rate{})",
+        )
+        .end_panel()
         .add_panel(name="Pre_TotalGain", name_en="train_pre_speedup_total_score_gain", type="line")
         .add_metric(
             metrics_name="train_pre_speedup_total_score_gain",
             expr="avg(train_pre_speedup_total_score_gain{})",
+        )
+        .end_panel()
+        .add_panel(name="Post_TotalGain", name_en="train_post_speedup_total_score_gain", type="line")
+        .add_metric(
+            metrics_name="train_post_speedup_total_score_gain",
+            expr="avg(train_post_speedup_total_score_gain{})",
         )
         .end_panel()
         .end_group()
@@ -175,6 +303,12 @@ def build_monitor():
         .add_panel(name="SpeedupReached", name_en="val_speedup_reached", type="line")
         .add_metric(metrics_name="val_speedup_reached", expr="avg(val_speedup_reached{})")
         .end_panel()
+        .add_panel(name="TimeToSpeedup", name_en="val_phase_time_to_speedup", type="line")
+        .add_metric(
+            metrics_name="val_phase_time_to_speedup",
+            expr="avg(val_phase_time_to_speedup{})",
+        )
+        .end_panel()
         .add_panel(name="Pre_Steps", name_en="val_pre_speedup_steps", type="line")
         .add_metric(metrics_name="val_pre_speedup_steps", expr="avg(val_pre_speedup_steps{})")
         .end_panel()
@@ -199,6 +333,81 @@ def build_monitor():
             expr="avg(val_post_speedup_shaped_reward{})",
         )
         .end_panel()
+        .add_panel(name="EarlyLootB", name_en="val_early_loot_collection_bonus", type="line")
+        .add_metric(
+            metrics_name="val_early_loot_collection_bonus",
+            expr="avg(val_early_loot_collection_bonus{})",
+        )
+        .end_panel()
+        .add_panel(name="EarlyLootS", name_en="val_early_loot_stall_penalty", type="line")
+        .add_metric(
+            metrics_name="val_early_loot_stall_penalty",
+            expr="avg(val_early_loot_stall_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="Pre_BufferR", name_en="val_pre_speedup_buffer_reward", type="line")
+        .add_metric(
+            metrics_name="val_pre_speedup_buffer_reward",
+            expr="avg(val_pre_speedup_buffer_reward{})",
+        )
+        .end_panel()
+        .add_panel(name="Monster2_P", name_en="val_second_monster_pressure_penalty", type="line")
+        .add_metric(
+            metrics_name="val_second_monster_pressure_penalty",
+            expr="avg(val_second_monster_pressure_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="FlashDir", name_en="val_flash_direction_reward", type="line")
+        .add_metric(
+            metrics_name="val_flash_direction_reward",
+            expr="avg(val_flash_direction_reward{})",
+        )
+        .end_panel()
+        .add_panel(name="FlashWall", name_en="val_flash_through_wall_reward", type="line")
+        .add_metric(
+            metrics_name="val_flash_through_wall_reward",
+            expr="avg(val_flash_through_wall_reward{})",
+        )
+        .end_panel()
+        .add_panel(name="FlashWaste", name_en="val_flash_waste_penalty", type="line")
+        .add_metric(
+            metrics_name="val_flash_waste_penalty",
+            expr="avg(val_flash_waste_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="HitWall", name_en="val_hit_wall_penalty", type="line")
+        .add_metric(metrics_name="val_hit_wall_penalty", expr="avg(val_hit_wall_penalty{})")
+        .end_panel()
+        .add_panel(name="Stagnation", name_en="val_stagnation_penalty", type="line")
+        .add_metric(
+            metrics_name="val_stagnation_penalty",
+            expr="avg(val_stagnation_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="Oscillation", name_en="val_oscillation_penalty", type="line")
+        .add_metric(
+            metrics_name="val_oscillation_penalty",
+            expr="avg(val_oscillation_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="MissTreasure", name_en="val_treasure_miss_penalty", type="line")
+        .add_metric(
+            metrics_name="val_treasure_miss_penalty",
+            expr="avg(val_treasure_miss_penalty{})",
+        )
+        .end_panel()
+        .add_panel(name="NoVisionMove", name_en="val_no_vision_patrol_bonus", type="line")
+        .add_metric(
+            metrics_name="val_no_vision_patrol_bonus",
+            expr="avg(val_no_vision_patrol_bonus{})",
+        )
+        .end_panel()
+        .add_panel(name="FirstTrea", name_en="val_time_to_first_treasure", type="line")
+        .add_metric(
+            metrics_name="val_time_to_first_treasure",
+            expr="avg(val_time_to_first_treasure{})",
+        )
+        .end_panel()
         .add_panel(name="Pre_StepGain", name_en="val_pre_speedup_step_score_gain", type="line")
         .add_metric(
             metrics_name="val_pre_speedup_step_score_gain",
@@ -221,6 +430,24 @@ def build_monitor():
         .add_metric(
             metrics_name="val_post_speedup_treasure_gain",
             expr="avg(val_post_speedup_treasure_gain{})",
+        )
+        .end_panel()
+        .add_panel(name="Pre_TreaCnt", name_en="val_pre_speedup_treasures_collected", type="line")
+        .add_metric(
+            metrics_name="val_pre_speedup_treasures_collected",
+            expr="avg(val_pre_speedup_treasures_collected{})",
+        )
+        .end_panel()
+        .add_panel(name="Post_TreaCnt", name_en="val_post_speedup_treasures_collected", type="line")
+        .add_metric(
+            metrics_name="val_post_speedup_treasures_collected",
+            expr="avg(val_post_speedup_treasures_collected{})",
+        )
+        .end_panel()
+        .add_panel(name="Pre_TreaRate", name_en="val_pre_speedup_treasure_rate", type="line")
+        .add_metric(
+            metrics_name="val_pre_speedup_treasure_rate",
+            expr="avg(val_pre_speedup_treasure_rate{})",
         )
         .end_panel()
         .add_panel(name="Pre_TotalGain", name_en="val_pre_speedup_total_score_gain", type="line")

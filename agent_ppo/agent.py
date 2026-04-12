@@ -43,12 +43,12 @@ class Agent(BaseAgent):
         self.monitor = monitor
         super().__init__(agent_type, device, logger, monitor)
 
-    def reset(self, env_obs=None):
+    def reset(self, env_obs=None, usr_conf=None):
         """Reset per-episode state.
 
         每局开始时重置状态。
         """
-        self.preprocessor.reset()
+        self.preprocessor.reset(usr_conf=usr_conf)
         self.last_action = -1
 
     def observation_process(self, env_obs):
