@@ -130,6 +130,7 @@ train_test.py
 
 - 决定本轮优化目标和主假设
 - 做外部调研，决定要不要尝试新方向
+- 当候选方向不止一个时，决定要比较哪些候选算法、参考实现或历史版本
 - 决定是否继续当前方向，还是切换方向
 - 启动平台真实训练，观察监控和日志
 - 从官方训练监控整理训练全部曲线截图，并放入对应算法文档目录的 `screenshots/`
@@ -143,6 +144,7 @@ train_test.py
 
 - 阅读仓库文档和官方开发文档
 - 分析当前基线实现和代码入口
+- 比较候选算法、`reference_algos/` 或历史算法版本与当前 baseline 的差异、收益、风险和落地成本
 - 完成代码修改
 - 跑最小验证，比如 `python3 train_test.py`
 - 把当前状态同步到 `DEV_MEMORY/NOW.md`
@@ -171,10 +173,10 @@ train_test.py
 /kaiwu-dev-init
 /kaiwu-doc-query
 /kaiwu-current-algo-analysis
+/kaiwu-algo-compare
+/kaiwu-algo-design
 /kaiwu-algo-implementation
-/kaiwu-version-control
 /kaiwu-memory-archive
-/kaiwu-version-control
 ```
 
 推荐提示词示例：
@@ -201,6 +203,28 @@ train_test.py
 #### 3. 开始一轮实现
 
 ```text
+/kaiwu-algo-compare
+
+目标：把 `GLOBAL_DOCS/算法调研.md` / `reference_algos/` / 你口述的候选方案，与当前 baseline 做比较。
+
+重点告诉我：
+1. 候选方向和当前 baseline 的关键差异
+2. 预期收益和主要风险
+3. 主要改动文件和落地成本
+4. 是否值得进入 /kaiwu-algo-design
+```
+
+#### 4. 把候选方向落成设计
+
+```text
+/kaiwu-algo-design
+
+目标：把确认要做的候选方向写成可实现方案，并补齐环境配置、系统训练配置和算法超参数。
+```
+
+#### 5. 开始一轮实现
+
+```text
 /kaiwu-algo-implementation
 
 目标：在 agent_ppo 中优化 xxx。
@@ -213,13 +237,7 @@ train_test.py
 5. 暂时不要 push
 ```
 
-#### 4. 收口和归档
-
-```text
-/kaiwu-version-control
-
-请检查本轮改动范围，给出建议 commit message，暂时不要 push
-```
+#### 6. 收口和归档
 
 ```text
 /kaiwu-memory-archive
@@ -504,10 +522,12 @@ git commit -m “feat(ppo): agent_ppo_20260410_hok_memory_map_v1
 人负责：
 
 - 决定本轮主方向，例如“优化奖励 shaping”或“接入 16 维动作空间”
+- 如果有多个候选方向，先决定要比较哪些方案
 
 AI 负责：
 
 - 复述目标
+- 如果这是新方向，先比较候选方案与当前 baseline 是否值得做
 - 映射到需要改动的代码文件
 - 检查是否和当前 `DEV_MEMORY/NOW.md` 冲突
 
@@ -524,16 +544,18 @@ AI 负责：
 - 读 `DEV_MEMORY/NOW.md`
 - 输出“当前做到哪一步、下一步建议”
 
-### Stage 2：查文档和分析基线
+### Stage 2：查文档、分析基线与比较候选方案
 
 人负责：
 
 - 指出自己关注的问题，比如 reward、动作空间、环境协议
+- 如果方向还没定，明确要让 AI 比较哪些候选算法或参考实现
 
 AI 负责：
 
 - 去 `开发文档/` 查官方说明
 - 梳理当前基线入口、接口、超参数和已知限制
+- 必要时把候选方案与当前 baseline 做同坐标系比较，再决定是否进入设计和实现
 
 ### Stage 3：代码实现
 
@@ -661,21 +683,23 @@ AI 负责：
 当前推荐的完整工作流是：
 
 ```text
-算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练结果整理 -> 信息归档 -> 结束
+算法调研 -> 候选比较 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练结果整理 -> 信息归档 -> 结束
 ```
 
 需要额外强调的规则：
 
 1. 任何算法开发轮次的第一步，必须先执行 `/kaiwu-dev-init`。
-2. `/kaiwu-algo-design` 不能只写抽象方案，必须结合开发文档补齐环境配置和超参数。
-3. `/kaiwu-algo-implementation` 必须先理解源码和改动文件落点，再进行实现；实现的最后一步是把 `NOW.md` 整理成正式算法文档初稿。
-4. `/kaiwu-memory-archive` 是开发流程的最后一步，负责正式归档、重置 `NOW.md`、完成最终 `commit`、`push`，并指导用户发起 merge。
-5. 训练结果整理由人主导完成：人只需要把训练/测试截图放入 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`；图片文件名（去掉扩展名）视作上传到官网的模型全称；AI 只检测是否有图，不校验真伪，也不再要求人额外填写模型名或截图说明。
+2. 当方向来自 `GLOBAL_DOCS/算法调研.md`、`reference_algos/`、历史算法版本或用户新提案时，优先使用 `/kaiwu-algo-compare` 判断是否值得做，再进入 `/kaiwu-algo-design`。
+3. `/kaiwu-algo-design` 不能只写抽象方案，必须结合开发文档补齐环境配置和超参数。
+4. `/kaiwu-algo-implementation` 必须先理解源码和改动文件落点，再进行实现；实现的最后一步是把 `NOW.md` 整理成正式算法文档初稿。
+5. `/kaiwu-memory-archive` 是开发流程的最后一步，负责正式归档、重置 `NOW.md`、完成最终 `commit`、`push`，并指导用户发起 merge。
+6. 训练结果整理由人主导完成：人只需要把训练/测试截图放入 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`；图片文件名（去掉扩展名）视作上传到官网的模型全称；AI 只检测是否有图，不校验真伪，也不再要求人额外填写模型名或截图说明。
 
 推荐的 skill 顺序：
 
 ```text
 /kaiwu-dev-init
+/kaiwu-algo-compare
 /kaiwu-algo-design
 /kaiwu-algo-implementation
 /kaiwu-memory-archive

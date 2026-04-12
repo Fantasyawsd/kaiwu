@@ -7,12 +7,14 @@
 完整工作流固定为：
 
 ```text
-算法调研 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练结果整理 -> 信息归档 -> 结束
+算法调研 -> 候选比较 -> 算法落地 -> 算法实现 -> 算法测试 -> 算法训练 -> 训练结果整理 -> 信息归档 -> 结束
 ````
 
 其中：
 
 - **算法调研**：形成人类主导的候选方向，主要沉淀到 `GLOBAL_DOCS/算法调研.md`
+
+- **候选比较**：把调研方向、`reference_algos/`、历史算法版本或用户新提案与当前 baseline 放到同一坐标系下比较，判断值不值得进入设计阶段
     
 - **算法落地**：把方向转成可以编码的实现方案，核心产物是 `DEV_MEMORY/NOW.md`
     
@@ -130,6 +132,7 @@ git checkout -b feature/<topic>
 - 只归档已验证的稳定信息
     
 - 训练结果必须来自真实平台
+- `GLOBAL_DOCS/算法总表.md` 中必须始终保持且仅保持一个“当前基线”；若本轮归档的是当前稳定主线版本，归档时必须把该版本提升为“当前基线”，并将旧基线降级为历史基线或已归档版本
     
 
 ---
@@ -143,6 +146,7 @@ git checkout -b feature/<topic>
 |`/kaiwu-dev-init`|开发轮次初始化，强制入口|所有轮次的第一步|
 |`/kaiwu-doc-query`|查询开发文档与接口规则|任意阶段按需调用|
 |`/kaiwu-current-algo-analysis`|分析当前算法实现与入口链|实现前、排障前、仅查看现状时|
+|`/kaiwu-algo-compare`|比较候选算法与当前 baseline，评估收益、风险和落地成本|新方向筛选、调研转设计前|
 |`/kaiwu-algo-design`|把调研方向落成可实现方案，补齐环境配置和超参数，写入 `NOW.md`|算法落地|
 |`/kaiwu-algo-implementation`|基于源码理解完成实现、测试、`NOW.md` 更新，并产出算法文档初稿|算法实现 + 算法测试|
 |`/kaiwu-memory-archive`|最终归档、重置 `NOW.md`、commit、push、merge 指引|信息归档|
@@ -155,6 +159,7 @@ git checkout -b feature/<topic>
 
 ```text
 /kaiwu-dev-init
+-> /kaiwu-algo-compare
 -> /kaiwu-algo-design
 -> /kaiwu-algo-implementation
 -> 人执行真实训练
@@ -176,13 +181,24 @@ git checkout -b feature/<topic>
 -> /kaiwu-current-algo-analysis
 ```
 
+#### 候选方向比较
+
+```text
+/kaiwu-dev-init
+-> /kaiwu-algo-compare
+```
+
 ---
 
 ### 4.3 Skill 调用规则
 
 - 任何非微小改动前，必须先调 `/kaiwu-dev-init`
     
+- 当需要在 `GLOBAL_DOCS/算法调研.md`、`reference_algos/`、历史算法文档或用户口述方案之间判断“值不值得做”时，先用 `/kaiwu-algo-compare`
+    
 - 新方向不得跳过 `/kaiwu-algo-design`
+    
+- `/kaiwu-algo-compare` 只做比较与判断，不改代码，不写 `NOW.md`
     
 - `/kaiwu-algo-design` 只产出方案并写入 `NOW.md`，不直接改代码
     
@@ -197,6 +213,7 @@ git checkout -b feature/<topic>
 - 训练完成后必须单独做人主导的训练结果整理与官网评估，不直接把训练结果混入实现过程
     
 - `/kaiwu-memory-archive` 是最终收口步骤，负责归档、重置 `NOW.md`、commit、push 和 merge 指引
+- `/kaiwu-memory-archive` 在更新 `GLOBAL_DOCS/算法总表.md` 时，必须显式判断“当前基线”是否需要切换；若当前源码主线已经演进到新版本，不得继续保留旧版本为“当前基线”
     
 - 不自动 push，所有 push 需用户确认后执行
     
@@ -425,6 +442,10 @@ train_test.py
 /kaiwu-dev-init
 # -> 确认当前分支，NOW.md 为空
 
+/kaiwu-algo-compare "添加LSTM网络"
+# -> 对比当前 baseline 和候选方向，判断收益 / 风险 / 改动范围
+# -> 若结论成立，再进入设计阶段
+
 /kaiwu-algo-design "添加LSTM网络"
 # -> 读取算法调研.md，了解基线
 # -> 与用户讨论：LSTM 维度、seq_len、学习率调整
@@ -469,6 +490,7 @@ train_test.py
 ```text
 算法调研
 -> /kaiwu-dev-init
+-> /kaiwu-algo-compare
 -> /kaiwu-algo-design
 -> /kaiwu-algo-implementation
 -> 本地 smoke test
