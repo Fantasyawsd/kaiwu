@@ -6,7 +6,7 @@ map = [1, 2, 3, 4, 5, 6, 7, 8]
 
 # Whether to randomly select maps. true = randomly pick one from configured maps per episode, false = used sequentially.
 # 是否随机抽取地图。布尔值。true表示每局从配置的地图中随机抽取一张，false表示按顺序抽取地图训练。
-map_random = false
+map_random = true
 
 # Number of treasures. Range: 0~10. When less than 10, spawn points are randomly chosen from available positions.
 # 宝箱数量。可配置范围为0～10。当配置小于10时，将从每张地图可生成宝箱的点位随机选择对应数量的点位生成宝箱。
@@ -34,4 +34,4 @@ monster_speedup = 500
 
 # Maximum steps per episode. The episode ends when this limit is reached. Range: 1~2000.
 # 最大步数。单局任务预测步数达到最大步数时，任务结束。可配置范围为1～2000。
-max_step = 1000
+max_step = 2000

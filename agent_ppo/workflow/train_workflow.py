@@ -9,8 +9,10 @@ Author: Tencent AI Arena Authors
 Training workflow for Gorge Chase PPO.
 """
 
+import copy
 import os
 import time
+import tomllib
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -134,11 +136,64 @@ def _mean_metric_dict(metric_dicts):
     }
 
 
-def _describe_maps(conf):
+def _extract_env_conf(conf):
     if not isinstance(conf, dict):
-        return "unknown"
+        return {}
     env_conf = conf.get("env_conf", conf)
+    return env_conf if isinstance(env_conf, dict) else {}
+
+
+def _describe_maps(conf):
+    env_conf = _extract_env_conf(conf)
     return env_conf.get("map", "unknown")
+
+
+def _curriculum_stage_start_episode(stage_name):
+    previous_max_train_episode = -1
+    for stage in Config.CURRICULUM_STAGES:
+        if stage.get("name") == stage_name:
+            return max(0, previous_max_train_episode + 1)
+        previous_max_train_episode = int(stage.get("max_train_episode", previous_max_train_episode))
+    return None
+
+
+def _resolve_preload_model_file(preload_model_dir, preload_model_id):
+    if not preload_model_dir:
+        return None
+    model_file = os.path.join(str(preload_model_dir), f"model.ckpt-{str(preload_model_id)}.pkl")
+    return os.path.abspath(model_file)
+
+
+def _read_resume_checkpoint_state(config_path="conf/configure_app.toml"):
+    state = {
+        "enabled": False,
+        "preload_model": False,
+        "preload_model_dir": None,
+        "preload_model_id": None,
+        "model_file": None,
+    }
+
+    try:
+        with open(config_path, "rb") as file_obj:
+            app_conf = tomllib.load(file_obj).get("app", {})
+    except (OSError, tomllib.TOMLDecodeError):
+        return state
+
+    preload_model = bool(app_conf.get("preload_model", False))
+    preload_model_dir = app_conf.get("preload_model_dir")
+    preload_model_id = app_conf.get("preload_model_id")
+    model_file = _resolve_preload_model_file(preload_model_dir, preload_model_id)
+
+    state.update(
+        {
+            "preload_model": preload_model,
+            "preload_model_dir": preload_model_dir,
+            "preload_model_id": preload_model_id,
+            "model_file": model_file,
+            "enabled": bool(preload_model and model_file and os.path.isfile(model_file)),
+        }
+    )
+    return state
 
 
 @dataclass
@@ -146,12 +201,28 @@ class EpisodeMetrics:
     speedup_reached: float = 0.0
     pre_speedup_steps: float = 0.0
     post_speedup_steps: float = 0.0
+    phase_time_to_speedup: float = 0.0
     pre_speedup_shaped_reward: float = 0.0
     post_speedup_shaped_reward: float = 0.0
+    early_loot_collection_bonus: float = 0.0
+    early_loot_stall_penalty: float = 0.0
+    pre_speedup_buffer_reward: float = 0.0
+    second_monster_pressure_penalty: float = 0.0
+    flash_direction_reward: float = 0.0
+    flash_through_wall_reward: float = 0.0
+    flash_waste_penalty: float = 0.0
+    hit_wall_penalty: float = 0.0
+    stagnation_penalty: float = 0.0
+    oscillation_penalty: float = 0.0
+    treasure_miss_penalty: float = 0.0
+    no_vision_patrol_bonus: float = 0.0
     pre_speedup_step_score_gain: float = 0.0
     post_speedup_step_score_gain: float = 0.0
     pre_speedup_treasure_gain: float = 0.0
     post_speedup_treasure_gain: float = 0.0
+    pre_speedup_treasures_collected: float = 0.0
+    post_speedup_treasures_collected: float = 0.0
+    time_to_first_treasure: float = -1.0
     pre_speedup_total_score_gain: float = 0.0
     post_speedup_total_score_gain: float = 0.0
     pre_speedup_terminal_bonus: float = 0.0
@@ -171,11 +242,20 @@ class EpisodeMetrics:
     _last_step_score: float = field(default=0.0, repr=False)
     _last_treasure_score: float = field(default=0.0, repr=False)
     _last_total_score: float = field(default=0.0, repr=False)
+    _last_treasures_collected: float = field(default=0.0, repr=False)
+    _phase_obs_count: float = field(default=0.0, repr=False)
 
-    def observe_step(self, env_obs, shaped_reward, step_idx):
+    def observe_step(self, env_obs, shaped_reward, reward_terms=None, speedup_state=None, step_idx=0):
         observation, frame_state, env_info = _extract_observation_parts(env_obs)
-        if not self.speedup_reached and _safe_int(env_info.get("collected_buff", 0)) > 0:
-            self.speedup_reached = 1.0
+        reward_terms = reward_terms or {}
+        speedup_state = speedup_state or {}
+
+        self.speedup_reached = max(
+            self.speedup_reached,
+            float(speedup_state.get("speedup_reached", 0.0)),
+        )
+        self.phase_time_to_speedup += float(speedup_state.get("time_to_speedup_norm", 0.0))
+        self._phase_obs_count += 1.0
 
         phase = "post" if self.speedup_reached else "pre"
         setattr(self, f"{phase}_speedup_steps", getattr(self, f"{phase}_speedup_steps") + 1.0)
@@ -184,6 +264,20 @@ class EpisodeMetrics:
             f"{phase}_speedup_shaped_reward",
             getattr(self, f"{phase}_speedup_shaped_reward") + float(shaped_reward),
         )
+        self.early_loot_collection_bonus += float(reward_terms.get("early_loot_collection_bonus", 0.0))
+        self.early_loot_stall_penalty += float(reward_terms.get("early_loot_stall_penalty", 0.0))
+        self.pre_speedup_buffer_reward += float(reward_terms.get("pre_speedup_buffer_reward", 0.0))
+        self.second_monster_pressure_penalty += float(
+            reward_terms.get("second_monster_pressure_penalty", 0.0)
+        )
+        self.flash_direction_reward += float(reward_terms.get("flash_direction_reward", 0.0))
+        self.flash_through_wall_reward += float(reward_terms.get("flash_through_wall_reward", 0.0))
+        self.flash_waste_penalty += float(reward_terms.get("flash_waste_penalty", 0.0))
+        self.hit_wall_penalty += float(reward_terms.get("hit_wall_penalty", 0.0))
+        self.stagnation_penalty += float(reward_terms.get("stagnation_penalty", 0.0))
+        self.oscillation_penalty += float(reward_terms.get("oscillation_penalty", 0.0))
+        self.treasure_miss_penalty += float(reward_terms.get("treasure_miss_penalty", 0.0))
+        self.no_vision_patrol_bonus += float(reward_terms.get("no_vision_patrol_bonus", 0.0))
 
         total_score, step_score, treasure_score, treasures_collected = _score_snapshot(
             frame_state,
@@ -204,16 +298,25 @@ class EpisodeMetrics:
             f"{phase}_speedup_total_score_gain",
             getattr(self, f"{phase}_speedup_total_score_gain") + (total_score - self._last_total_score),
         )
+        treasure_delta = max(0.0, float(treasures_collected) - self._last_treasures_collected)
+        setattr(
+            self,
+            f"{phase}_speedup_treasures_collected",
+            getattr(self, f"{phase}_speedup_treasures_collected") + treasure_delta,
+        )
 
         self._last_step_score = step_score
         self._last_treasure_score = treasure_score
         self._last_total_score = total_score
+        self._last_treasures_collected = float(treasures_collected)
 
         self.total_score = total_score
         self.step_score = step_score
         self.treasure_score = treasure_score
         self.treasures_collected = float(treasures_collected)
         self.episode_steps = float(_safe_int(env_info.get("finished_steps", observation.get("step_no", step_idx))))
+        if treasure_delta > 0.0 and self.time_to_first_treasure < 0.0:
+            self.time_to_first_treasure = self.episode_steps
 
     def finalize(self, env_obs, final_bonus, terminated, truncated, step_idx):
         observation, frame_state, env_info = _extract_observation_parts(env_obs)
@@ -253,8 +356,17 @@ class EpisodeMetrics:
         self.post_speedup_terminated = 1.0 if (terminated and self.speedup_reached) else 0.0
         self.danger_level = _danger_level(frame_state, hero_pos)
         self.nearest_treasure_dist = _nearest_treasure_distance(frame_state, hero_pos)
+        if self.time_to_first_treasure < 0.0:
+            self.time_to_first_treasure = float(max_step + 1)
 
     def as_train_monitor_dict(self):
+        mean_phase_time_to_speedup = self.phase_time_to_speedup / max(1.0, self._phase_obs_count)
+        total_treasures_collected = self.pre_speedup_treasures_collected + self.post_speedup_treasures_collected
+        pre_speedup_treasure_rate = (
+            self.pre_speedup_treasures_collected / total_treasures_collected
+            if total_treasures_collected > 1e-6
+            else 0.0
+        )
         return {
             "train_reward": self.reward,
             "train_total_score": self.total_score,
@@ -263,20 +375,45 @@ class EpisodeMetrics:
             "train_treasures_collected": self.treasures_collected,
             "train_episode_steps": self.episode_steps,
             "train_speedup_reached": self.speedup_reached,
+            "train_phase_time_to_speedup": mean_phase_time_to_speedup,
             "train_pre_speedup_steps": self.pre_speedup_steps,
             "train_post_speedup_steps": self.post_speedup_steps,
             "train_pre_speedup_reward": self.pre_speedup_shaped_reward + self.pre_speedup_terminal_bonus,
             "train_post_speedup_reward": self.post_speedup_shaped_reward + self.post_speedup_terminal_bonus,
             "train_pre_speedup_shaped_reward": self.pre_speedup_shaped_reward,
             "train_post_speedup_shaped_reward": self.post_speedup_shaped_reward,
+            "train_early_loot_collection_bonus": self.early_loot_collection_bonus,
+            "train_early_loot_stall_penalty": self.early_loot_stall_penalty,
+            "train_pre_speedup_buffer_reward": self.pre_speedup_buffer_reward,
+            "train_second_monster_pressure_penalty": self.second_monster_pressure_penalty,
+            "train_flash_direction_reward": self.flash_direction_reward,
+            "train_flash_through_wall_reward": self.flash_through_wall_reward,
+            "train_flash_waste_penalty": self.flash_waste_penalty,
+            "train_hit_wall_penalty": self.hit_wall_penalty,
+            "train_stagnation_penalty": self.stagnation_penalty,
+            "train_oscillation_penalty": self.oscillation_penalty,
+            "train_treasure_miss_penalty": self.treasure_miss_penalty,
+            "train_no_vision_patrol_bonus": self.no_vision_patrol_bonus,
+            "train_time_to_first_treasure": self.time_to_first_treasure,
             "train_pre_speedup_step_score_gain": self.pre_speedup_step_score_gain,
             "train_post_speedup_step_score_gain": self.post_speedup_step_score_gain,
             "train_pre_speedup_treasure_gain": self.pre_speedup_treasure_gain,
             "train_post_speedup_treasure_gain": self.post_speedup_treasure_gain,
+            "train_pre_speedup_treasures_collected": self.pre_speedup_treasures_collected,
+            "train_post_speedup_treasures_collected": self.post_speedup_treasures_collected,
+            "train_pre_speedup_treasure_rate": pre_speedup_treasure_rate,
             "train_pre_speedup_total_score_gain": self.pre_speedup_total_score_gain,
+            "train_post_speedup_total_score_gain": self.post_speedup_total_score_gain,
         }
 
     def as_val_episode_dict(self):
+        mean_phase_time_to_speedup = self.phase_time_to_speedup / max(1.0, self._phase_obs_count)
+        total_treasures_collected = self.pre_speedup_treasures_collected + self.post_speedup_treasures_collected
+        pre_speedup_treasure_rate = (
+            self.pre_speedup_treasures_collected / total_treasures_collected
+            if total_treasures_collected > 1e-6
+            else 0.0
+        )
         return {
             "reward": self.reward,
             "total_score": self.total_score,
@@ -285,16 +422,33 @@ class EpisodeMetrics:
             "treasures_collected": self.treasures_collected,
             "episode_steps": self.episode_steps,
             "speedup_reached": self.speedup_reached,
+            "phase_time_to_speedup": mean_phase_time_to_speedup,
             "pre_speedup_steps": self.pre_speedup_steps,
             "post_speedup_steps": self.post_speedup_steps,
             "pre_speedup_reward": self.pre_speedup_shaped_reward + self.pre_speedup_terminal_bonus,
             "post_speedup_reward": self.post_speedup_shaped_reward + self.post_speedup_terminal_bonus,
             "pre_speedup_shaped_reward": self.pre_speedup_shaped_reward,
             "post_speedup_shaped_reward": self.post_speedup_shaped_reward,
+            "early_loot_collection_bonus": self.early_loot_collection_bonus,
+            "early_loot_stall_penalty": self.early_loot_stall_penalty,
+            "pre_speedup_buffer_reward": self.pre_speedup_buffer_reward,
+            "second_monster_pressure_penalty": self.second_monster_pressure_penalty,
+            "flash_direction_reward": self.flash_direction_reward,
+            "flash_through_wall_reward": self.flash_through_wall_reward,
+            "flash_waste_penalty": self.flash_waste_penalty,
+            "hit_wall_penalty": self.hit_wall_penalty,
+            "stagnation_penalty": self.stagnation_penalty,
+            "oscillation_penalty": self.oscillation_penalty,
+            "treasure_miss_penalty": self.treasure_miss_penalty,
+            "no_vision_patrol_bonus": self.no_vision_patrol_bonus,
+            "time_to_first_treasure": self.time_to_first_treasure,
             "pre_speedup_step_score_gain": self.pre_speedup_step_score_gain,
             "post_speedup_step_score_gain": self.post_speedup_step_score_gain,
             "pre_speedup_treasure_gain": self.pre_speedup_treasure_gain,
             "post_speedup_treasure_gain": self.post_speedup_treasure_gain,
+            "pre_speedup_treasures_collected": self.pre_speedup_treasures_collected,
+            "post_speedup_treasures_collected": self.post_speedup_treasures_collected,
+            "pre_speedup_treasure_rate": pre_speedup_treasure_rate,
             "pre_speedup_total_score_gain": self.pre_speedup_total_score_gain,
             "post_speedup_total_score_gain": self.post_speedup_total_score_gain,
             "pre_speedup_terminal_bonus": self.pre_speedup_terminal_bonus,
@@ -361,6 +515,7 @@ class EpisodeRunner:
         self.logger = logger
         self.monitor = monitor
         self.episode_cnt = 0
+        self.completed_episode_count = 0
         self.last_get_training_metrics_time = 0
 
         self.train_conf = train_conf or usr_conf
@@ -370,7 +525,86 @@ class EpisodeRunner:
         self.is_eval_mode = False
         self.eval_episode_cnt = 0
         self.train_episode_since_last_eval = 0
+        self.train_episode_total = 0
         self.eval_episode_metrics = []
+        self._last_progress_report_step = None
+        self.resume_checkpoint_state = _read_resume_checkpoint_state()
+        self._maybe_resume_curriculum_stage()
+
+    def _maybe_resume_curriculum_stage(self):
+        resume_stage_name = getattr(Config, "RESUME_CURRICULUM_STAGE_NAME", None)
+        if not resume_stage_name or not self.resume_checkpoint_state.get("enabled", False):
+            return
+
+        start_episode = _curriculum_stage_start_episode(resume_stage_name)
+        if start_episode is None:
+            if self.logger:
+                self.logger.warning(
+                    f"[CURRICULUM] resume stage {resume_stage_name} not found, keep train_episode_total=0"
+                )
+            return
+
+        self.train_episode_total = start_episode
+        if self.logger:
+            self.logger.info(
+                f"[CURRICULUM] resume checkpoint detected at {self.resume_checkpoint_state.get('model_file')}, "
+                f"initialize train_episode_total={self.train_episode_total} so training starts from "
+                f"stage={resume_stage_name}"
+            )
+
+    def _sample_from_range(self, bounds):
+        low, high = int(bounds[0]), int(bounds[1])
+        if low > high:
+            low, high = high, low
+        return int(np.random.randint(low, high + 1))
+
+    def _select_curriculum_stage(self):
+        for stage in Config.CURRICULUM_STAGES:
+            if self.train_episode_total <= int(stage["max_train_episode"]):
+                return stage
+        return Config.CURRICULUM_STAGES[-1]
+
+    def _build_train_episode_conf(self):
+        episode_conf = copy.deepcopy(self.train_conf)
+        env_conf = _extract_env_conf(episode_conf)
+        stage = self._select_curriculum_stage()
+
+        env_conf["map_random"] = True
+        env_conf["treasure_count"] = self._sample_from_range(stage["treasure_count"])
+        env_conf["buff_count"] = self._sample_from_range(stage["buff_count"])
+        env_conf["monster_interval"] = self._sample_from_range(stage["monster_interval"])
+        env_conf["monster_speedup"] = self._sample_from_range(stage["monster_speedup"])
+        env_conf["max_step"] = int(stage.get("max_step", env_conf.get("max_step", 1000)))
+        return episode_conf, stage["name"]
+
+    def _report_episode_progress(self, step, force=False):
+        if not self.monitor:
+            return
+        interval = max(1, int(getattr(Config, "EPISODE_PROGRESS_REPORT_INTERVAL", 50)))
+        step = int(step)
+        if not force and step > 0 and step % interval != 0:
+            return
+        if not force and self._last_progress_report_step == step:
+            return
+        self._last_progress_report_step = step
+
+        progress_metrics = {
+            "current_episode_id": float(self.episode_cnt),
+            "completed_episode_count": float(self.completed_episode_count),
+            "current_episode_step": float(step),
+            "current_episode_is_eval": 1.0 if self.is_eval_mode else 0.0,
+            "train_episode_total": float(self.train_episode_total),
+        }
+        self.monitor.put_data({os.getpid(): _round_metric_dict(progress_metrics)})
+
+    def _describe_episode_conf(self, conf):
+        env_conf = _extract_env_conf(conf)
+        return (
+            f"maps={env_conf.get('map')} map_random={env_conf.get('map_random')} "
+            f"treasure_count={env_conf.get('treasure_count')} buff_count={env_conf.get('buff_count')} "
+            f"monster_interval={env_conf.get('monster_interval')} "
+            f"monster_speedup={env_conf.get('monster_speedup')} max_step={env_conf.get('max_step')}"
+        )
 
     def run_episodes(self):
         while True:
@@ -390,7 +624,11 @@ class EpisodeRunner:
                     f"[EVAL] Eval completed. Back to training on maps {_describe_maps(self.train_conf)}"
                 )
 
-            current_conf = self.eval_conf if self.is_eval_mode else self.train_conf
+            stage_name = "eval_fixed"
+            if self.is_eval_mode:
+                current_conf = copy.deepcopy(self.eval_conf)
+            else:
+                current_conf, stage_name = self._build_train_episode_conf()
 
             now = time.time()
             if now - self.last_get_training_metrics_time >= 60:
@@ -403,7 +641,7 @@ class EpisodeRunner:
             if handle_disaster_recovery(env_obs, self.logger):
                 continue
 
-            self.agent.reset(env_obs)
+            self.agent.reset(env_obs, usr_conf=current_conf)
             self.agent.load_model(id="latest")
 
             obs_data, remain_info = self.agent.observation_process(env_obs)
@@ -411,12 +649,24 @@ class EpisodeRunner:
             collector = []
             episode_metrics = EpisodeMetrics()
             self.episode_cnt += 1
+            if not self.is_eval_mode:
+                self.train_episode_total += 1
             done = False
             step = 0
             total_reward = 0.0
+            self._last_progress_report_step = None
+            self._report_episode_progress(step=0, force=True)
 
             mode_str = "EVAL" if self.is_eval_mode else "TRAIN"
-            self.logger.info(f"[{mode_str}] Episode {self.episode_cnt} start")
+            if self.is_eval_mode:
+                self.logger.info(
+                    f"[{mode_str}] Episode {self.episode_cnt} start {self._describe_episode_conf(current_conf)}"
+                )
+            else:
+                self.logger.info(
+                    f"[{mode_str}] Episode {self.episode_cnt} start stage={stage_name} "
+                    f"{self._describe_episode_conf(current_conf)}"
+                )
 
             while not done:
                 act_data = self.agent.predict(list_obs_data=[obs_data])[0]
@@ -430,11 +680,18 @@ class EpisodeRunner:
                 truncated = env_obs["truncated"]
                 step += 1
                 done = terminated or truncated
+                self._report_episode_progress(step=step)
 
                 _obs_data, _remain_info = self.agent.observation_process(env_obs)
                 reward = np.array(_remain_info.get("reward", [0.0]), dtype=np.float32)
                 total_reward += float(reward[0])
-                episode_metrics.observe_step(env_obs, float(reward[0]), step)
+                episode_metrics.observe_step(
+                    env_obs,
+                    float(reward[0]),
+                    reward_terms=_remain_info.get("reward_terms", {}),
+                    speedup_state=_remain_info.get("speedup_state", {}),
+                    step_idx=step,
+                )
 
                 final_reward = np.zeros(1, dtype=np.float32)
                 if done:
@@ -478,6 +735,9 @@ class EpisodeRunner:
                 if done:
                     if collector:
                         collector[-1].reward = collector[-1].reward + final_reward
+
+                    self.completed_episode_count += 1
+                    self._report_episode_progress(step=step, force=True)
 
                     episode_metrics.finalize(
                         env_obs=env_obs,
@@ -523,16 +783,35 @@ class EpisodeRunner:
             "val_treasures_collected": mean_metrics.get("treasures_collected", 0.0),
             "val_episode_steps": mean_metrics.get("episode_steps", 0.0),
             "val_speedup_reached": mean_metrics.get("speedup_reached", 0.0),
+            "val_phase_time_to_speedup": mean_metrics.get("phase_time_to_speedup", 0.0),
             "val_pre_speedup_steps": mean_metrics.get("pre_speedup_steps", 0.0),
             "val_post_speedup_steps": mean_metrics.get("post_speedup_steps", 0.0),
             "val_pre_speedup_reward": mean_metrics.get("pre_speedup_reward", 0.0),
             "val_post_speedup_reward": mean_metrics.get("post_speedup_reward", 0.0),
             "val_pre_speedup_shaped_reward": mean_metrics.get("pre_speedup_shaped_reward", 0.0),
             "val_post_speedup_shaped_reward": mean_metrics.get("post_speedup_shaped_reward", 0.0),
+            "val_early_loot_collection_bonus": mean_metrics.get("early_loot_collection_bonus", 0.0),
+            "val_early_loot_stall_penalty": mean_metrics.get("early_loot_stall_penalty", 0.0),
+            "val_pre_speedup_buffer_reward": mean_metrics.get("pre_speedup_buffer_reward", 0.0),
+            "val_second_monster_pressure_penalty": mean_metrics.get(
+                "second_monster_pressure_penalty", 0.0
+            ),
+            "val_flash_direction_reward": mean_metrics.get("flash_direction_reward", 0.0),
+            "val_flash_through_wall_reward": mean_metrics.get("flash_through_wall_reward", 0.0),
+            "val_flash_waste_penalty": mean_metrics.get("flash_waste_penalty", 0.0),
+            "val_hit_wall_penalty": mean_metrics.get("hit_wall_penalty", 0.0),
+            "val_stagnation_penalty": mean_metrics.get("stagnation_penalty", 0.0),
+            "val_oscillation_penalty": mean_metrics.get("oscillation_penalty", 0.0),
+            "val_treasure_miss_penalty": mean_metrics.get("treasure_miss_penalty", 0.0),
+            "val_no_vision_patrol_bonus": mean_metrics.get("no_vision_patrol_bonus", 0.0),
+            "val_time_to_first_treasure": mean_metrics.get("time_to_first_treasure", 0.0),
             "val_pre_speedup_step_score_gain": mean_metrics.get("pre_speedup_step_score_gain", 0.0),
             "val_post_speedup_step_score_gain": mean_metrics.get("post_speedup_step_score_gain", 0.0),
             "val_pre_speedup_treasure_gain": mean_metrics.get("pre_speedup_treasure_gain", 0.0),
             "val_post_speedup_treasure_gain": mean_metrics.get("post_speedup_treasure_gain", 0.0),
+            "val_pre_speedup_treasures_collected": mean_metrics.get("pre_speedup_treasures_collected", 0.0),
+            "val_post_speedup_treasures_collected": mean_metrics.get("post_speedup_treasures_collected", 0.0),
+            "val_pre_speedup_treasure_rate": mean_metrics.get("pre_speedup_treasure_rate", 0.0),
             "val_pre_speedup_total_score_gain": mean_metrics.get("pre_speedup_total_score_gain", 0.0),
             "val_post_speedup_total_score_gain": mean_metrics.get("post_speedup_total_score_gain", 0.0),
             "val_pre_speedup_terminal_bonus": mean_metrics.get("pre_speedup_terminal_bonus", 0.0),
