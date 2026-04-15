@@ -190,7 +190,7 @@ allowed-tools: Read, Grep, Glob
 | 当前算法设计完整但未实现 | 使用 `/kaiwu-algo-implementation` 开始实现 |
 | 当前算法已实现但需优化 | 先修改代码，然后跑 `python train_test.py` 验证 |
 | 需要修改超参数/环境配置 | 编辑对应配置文件，然后重新训练 |
-| 训练已完成需要评估效果 | 人工查看官方训练监控，按 `算法完整名 + 训练步数` 上传模型做 5 次官方评估，并将训练截图与最终结果截图放入对应算法文档目录的 `screenshots/` |
+| 训练已完成需要评估效果 | 人工查看官方训练监控，按 `算法完整名 + 训练步数` 上传模型做 5 次官方评估，并将训练 HTML 文档与最终结果 HTML 文档放入对应算法文档目录的 `html/` |
 | 发现算法设计有问题 | 更新 `DEV_MEMORY/NOW.md`，然后 `/kaiwu-algo-implementation` |
 | 算法已稳定，准备归档 | 使用 `/kaiwu-memory-archive` 完成归档 |
 ```

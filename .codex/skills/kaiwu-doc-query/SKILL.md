@@ -56,6 +56,6 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 | 场景 | 建议下一步 |
 |------|-----------|
 | 查询的是环境/数据协议问题 | 如需实现算法，使用 `/kaiwu-algo-design` 或 `/kaiwu-algo-implementation` |
-| 查询的是训练监控问题 | 如需整理训练结果，优先查看官方训练监控，按 `算法完整名 + 训练步数` 上传模型做 5 次官方评估，并把训练截图与评估结果截图归档到算法文档目录的 `screenshots/` |
+| 查询的是训练监控问题 | 如需整理训练结果，优先查看官方训练监控，按 `算法完整名 + 训练步数` 上传模型做 5 次官方评估，并把训练 HTML 文档与评估结果 HTML 文档归档到算法文档目录的 `html/` |
 | 查询后发现当前算法有问题 | 使用 `/kaiwu-current-algo-analysis` 全面分析 |
 | 信息不足需要设计新算法 | 使用 `/kaiwu-algo-design` |
