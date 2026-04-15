@@ -63,8 +63,8 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 - 训练 workflow
 - 已知限制
 - 真实训练信息（若已有）
-- 官方训练监控截图索引（截图文件由人放到 `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/`）
-- 官网模型评估记录：模型上传命名、5 次评估、10 张地图得分、最终结果截图索引
+- 官方训练监控 HTML 文档索引（HTML 文档由人放到 `GLOBAL_DOCS/算法文档/<算法完整名>/html/`）
+- 官网模型评估记录：模型上传命名、5 次评估、10 张地图得分、最终结果 HTML 文档索引
 
 ### Step 3：同步算法总表
 
@@ -111,7 +111,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write
 确认：
 
 - [ ] `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 已创建或更新
-- [ ] `GLOBAL_DOCS/算法文档/<算法完整名>/screenshots/` 已预留，等待人工放入官方训练监控截图与最终评估结果截图
+- [ ] `GLOBAL_DOCS/算法文档/<算法完整名>/html/` 已预留，等待人工放入官方训练监控 HTML 文档与最终评估结果 HTML 文档
 - [ ] `GLOBAL_DOCS/算法总表.md` 已更新
 - [ ] 若本轮归档的是当前稳定主线版本，“当前基线”标记已切换到本轮算法，且旧基线角色已同步调整
 - [ ] `DEV_MEMORY/NOW.md` 已重置
@@ -167,7 +167,7 @@ push 完成后，明确告诉用户：
 
 ### 已完成
 - [x] 算法文档已归档到 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md`
-- [x] 官方训练监控与评估结果截图目录 `screenshots/` 已预留
+- [x] 官方训练监控与评估结果 HTML 文档目录 `html/` 已预留
 - [x] 算法总表已更新
 - [x] `DEV_MEMORY/NOW.md` 已重置
 - [x] 代码已提交并推送到远端分支 `feature/<分支名>`

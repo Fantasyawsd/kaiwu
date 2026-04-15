@@ -30,7 +30,7 @@ git checkout -b feature/<topic>
 -> /kaiwu-algo-compare        # 当需要比较外部调研算法 / reference_algos / 历史版本 / 用户方案时
 -> /kaiwu-algo-design
 -> /kaiwu-algo-implementation
--> 人执行真实训练与截图整理
+-> 人执行真实训练与 HTML 文档整理
 -> /kaiwu-memory-archive
 ```
 
@@ -64,7 +64,7 @@ git checkout -b feature/<topic>
 ├── GLOBAL_DOCS/            # 全局稳定知识库
 │   ├── 算法总表.md         # 已实现算法清单（AI 维护）
 │   ├── 算法调研.md         # 外部调研候选方向（人维护）
-│   └── 算法文档/           # 正式算法文档目录（每个算法为一个文件夹，内含 README.md 与 screenshots/；截图目录存放训练监控与官方评估结果）
+│   └── 算法文档/           # 正式算法文档目录（每个算法为一个文件夹，内含 README.md 与 html/；html 目录存放训练监控与官方评估结果 HTML 文档）
 ├── DEV_MEMORY/             # 当前开发状态记忆（用于断线重连与快速接手）
 │   └── NOW.md              # 当前要实现什么、做到哪一步、下一步做什么
 ├── .claude/skills/         # Repo-local Claude Code skills
@@ -107,7 +107,7 @@ git checkout -b feature/<topic>
 | 目录/文件 | 功能说明 |
 |-----------|----------|
 | `开发文档/` | 官方开发文档，包含环境规则说明、数据协议定义、框架接口文档。AI 查询环境相关问题优先查阅此处。 |
-| `GLOBAL_DOCS/` | 全局稳定知识库。`算法总表.md` 记录所有已实现算法的状态和性能；`算法调研.md` 记录待调研的候选方向；`算法文档/` 为各算法的归档目录，每个算法使用单独文件夹存放 `README.md`，并在 `screenshots/` 中归档训练监控截图与官方评估结果截图。 |
+| `GLOBAL_DOCS/` | 全局稳定知识库。`算法总表.md` 记录所有已实现算法的状态和性能；`算法调研.md` 记录待调研的候选方向；`算法文档/` 为各算法的归档目录，每个算法使用单独文件夹存放 `README.md`，并在 `html/` 中归档训练监控 HTML 文档与官方评估结果 HTML 文档。 |
 | `DEV_MEMORY/NOW.md` | 当前开发状态记忆。记录本轮要实现的内容、当前进度、下一步计划。用于 AI 断线重连后快速恢复上下文。 |
 | `reference_algos/` | 外部参考算法源码目录。存放调研得到的第三方算法完整实现（如 `hok_prelim/`），供设计/实现阶段参考借鉴。**不直接作为训练入口**。 |
 

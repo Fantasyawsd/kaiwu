@@ -42,7 +42,7 @@ class Model(nn.Module):
         value_num = Config.VALUE_NUM
 
         self.feature_splits = Config.FEATURE_SPLIT_SHAPE
-        hero_dim, monster_dim, _, map_dim, legal_dim, progress_dim = self.feature_splits
+        hero_dim, monster_dim, _, treasure_dim, map_dim, legal_dim, progress_dim = self.feature_splits
         control_dim = legal_dim + progress_dim
         monster_pair_dim = monster_dim * 2
 
@@ -52,6 +52,10 @@ class Model(nn.Module):
         )
         self.monster_encoder = nn.Sequential(
             make_fc_layer(monster_pair_dim, Config.MONSTER_ENCODER_DIM),
+            nn.ReLU(),
+        )
+        self.treasure_encoder = nn.Sequential(
+            make_fc_layer(treasure_dim, Config.TREASURE_ENCODER_DIM),
             nn.ReLU(),
         )
 
@@ -83,6 +87,7 @@ class Model(nn.Module):
         fusion_dim = (
             Config.HERO_ENCODER_DIM
             + Config.MONSTER_ENCODER_DIM
+            + Config.TREASURE_ENCODER_DIM
             + Config.MAP_ENCODER_DIM
             + Config.CONTROL_ENCODER_DIM
         )
@@ -100,7 +105,7 @@ class Model(nn.Module):
         self.critic_head = make_fc_layer(Config.FUSION_HIDDEN_DIM, value_num)
 
     def forward(self, obs, inference=False):
-        hero_feat, monster_1, monster_2, map_feat, legal_action, progress_feat = torch.split(
+        hero_feat, monster_1, monster_2, treasure_feat, map_feat, legal_action, progress_feat = torch.split(
             obs, self.feature_splits, dim=1
         )
         monster_feat = torch.cat([monster_1, monster_2], dim=1)
@@ -111,6 +116,7 @@ class Model(nn.Module):
             [
                 self.hero_encoder(hero_feat),
                 self.monster_encoder(monster_feat),
+                self.treasure_encoder(treasure_feat),
                 self.map_encoder(map_feat),
                 self.control_encoder(control_feat),
             ],

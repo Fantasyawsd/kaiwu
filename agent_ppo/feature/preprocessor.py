@@ -175,6 +175,7 @@ class Preprocessor:
         self.last_flash_count = 0
         self.last_target_treasure_id = None
         self.last_target_treasure_distance = None
+        self.last_nearest_visible_treasure_distance = None
         self.last_target_buff_id = None
         self.last_target_buff_distance = None
         self.early_loot_stall_steps = 0
@@ -308,6 +309,29 @@ class Preprocessor:
             dtype=np.float32,
         )
 
+        walkable_channel = semantic_map[0]
+        if treasure_target is not None and _is_valid_position(treasure_target.pos):
+            treasure_passability = self._compute_treasure_passability(
+                hero_pos, treasure_target, walkable_channel,
+            )
+            treasure_feat = np.array(
+                [
+                    treasure_visible,
+                    _norm(treasure_target.pos[0], MAP_SIZE - 1.0),
+                    _norm(treasure_target.pos[1], MAP_SIZE - 1.0),
+                    treasure_passability,
+                    treasure_distance_norm,
+                    _norm(treasure_target.distance_bucket, MAX_DIST_BUCKET),
+                    treasure_dir_sin,
+                    treasure_dir_cos,
+                    treasure_available,
+                    treasure_opportunity,
+                ],
+                dtype=np.float32,
+            )
+        else:
+            treasure_feat = np.zeros(Config.FEATURES[3], dtype=np.float32)
+
         progress_feat = np.array(
             [
                 remaining_treasure_ratio,
@@ -343,6 +367,7 @@ class Preprocessor:
                 hero_feat,
                 monsters[0]["feature"],
                 monsters[1]["feature"],
+                treasure_feat,
                 semantic_map.reshape(-1),
                 np.asarray(legal_action, dtype=np.float32),
                 progress_feat,
@@ -369,6 +394,8 @@ class Preprocessor:
         self.last_min_monster_distance = min_monster_distance
         self.last_target_treasure_id = treasure_target.config_id if treasure_target is not None else None
         self.last_target_treasure_distance = treasure_target.distance if treasure_target is not None else None
+        nearest_visible = self._pick_nearest_visible(self.treasure_memory)
+        self.last_nearest_visible_treasure_distance = nearest_visible.distance if nearest_visible is not None else None
         self.last_target_buff_id = buff_target.config_id if buff_target is not None else None
         self.last_target_buff_distance = buff_target.distance if buff_target is not None else None
         self.last_treasure_count = treasure_count
@@ -755,6 +782,43 @@ class Preprocessor:
         greed_window = treasure_opportunity + phase_bonus - (0.75 * float(survival_pressure)) - speed_penalty
         return float(np.clip(greed_window, 0.0, 1.0))
 
+    def _compute_treasure_passability(self, hero_pos, treasure_target, walkable_channel):
+        if treasure_target is None or not _is_valid_position(treasure_target.pos):
+            return 0.0
+
+        delta = np.asarray(treasure_target.pos, dtype=np.float32) - np.asarray(hero_pos, dtype=np.float32)
+        dist = float(np.linalg.norm(delta))
+        if dist < 1e-6:
+            return 1.0
+
+        dx, dz = float(delta[0]), float(delta[1])
+        best_action = None
+        best_alignment = -2.0
+        for action, (d_row, d_col) in ACTION_TO_ROW_COL_DELTA.items():
+            norm = math.sqrt(d_row * d_row + d_col * d_col)
+            if norm < 1e-6:
+                continue
+            alignment = (d_col * dx + d_row * dz) / (norm * dist)
+            if alignment > best_alignment:
+                best_alignment = alignment
+                best_action = action
+
+        if best_action is None:
+            return 0.0
+
+        d_row, d_col = ACTION_TO_ROW_COL_DELTA[best_action]
+        center = LOCAL_HALF
+        walkable_count = 0
+        check_count = 0
+        for step in range(1, 4):
+            r = center + d_row * step
+            c = center + d_col * step
+            if 0 <= r < Config.LOCAL_MAP_SIZE and 0 <= c < Config.LOCAL_MAP_SIZE:
+                walkable_count += float(walkable_channel[r, c] > 0.0)
+                check_count += 1
+
+        return walkable_count / float(max(1, check_count))
+
     def _sync_collectible_memory(self, organs, env_info, hero_pos):
         for memory_bank in (self.treasure_memory, self.buff_memory):
             for target in memory_bank.values():
@@ -821,6 +885,16 @@ class Preprocessor:
                 candidates,
                 key=lambda target: (0 if target.visible_this_step else 1, target.distance),
             )
+        return min(candidates, key=lambda target: target.distance)
+
+    def _pick_nearest_visible(self, memory_bank):
+        candidates = [
+            target
+            for target in memory_bank.values()
+            if target.available and target.visible_this_step and _is_valid_position(target.pos)
+        ]
+        if not candidates:
+            return None
         return min(candidates, key=lambda target: target.distance)
 
     def _target_guidance(self, hero_pos, target):
@@ -1142,13 +1216,21 @@ class Preprocessor:
             dist_shaping *= Config.EARLY_LOOT_DIST_SHAPING_MULTIPLIER
 
         treasure_dist_reward = 0.0
+        nearest_visible = self._pick_nearest_visible(self.treasure_memory)
+        current_nearest_visible_dist = nearest_visible.distance if nearest_visible is not None else None
+        if current_nearest_visible_dist is not None and self.last_nearest_visible_treasure_distance is not None:
+            visible_progress = self._towards_reward(
+                self.last_nearest_visible_treasure_distance,
+                current_nearest_visible_dist,
+            )
+            treasure_dist_reward = (
+                Config.TREASURE_DIST_COEF * treasure_priority_multiplier * visible_progress
+            )
+
         if treasure_target is not None and self.last_target_treasure_distance is not None:
             treasure_progress = self._towards_reward(
                 self.last_target_treasure_distance,
                 treasure_target.distance,
-            )
-            treasure_dist_reward = (
-                Config.TREASURE_DIST_COEF * treasure_priority_multiplier * treasure_progress
             )
         else:
             treasure_progress = 0.0

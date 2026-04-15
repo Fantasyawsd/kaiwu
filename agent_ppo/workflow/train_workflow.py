@@ -12,13 +12,13 @@ Training workflow for Gorge Chase PPO.
 import copy
 import os
 import time
-import tomllib
 from dataclasses import dataclass, field
 
 import numpy as np
 
 from agent_ppo.conf.conf import Config
 from agent_ppo.feature.definition import SampleData, sample_process
+from agent_ppo.resume_utils import read_configured_resume_checkpoint, write_resume_progress_snapshot
 from common_python.utils.workflow_disaster_recovery import handle_disaster_recovery
 from tools.metrics_utils import get_training_metrics
 from tools.train_env_conf_validate import read_usr_conf
@@ -155,45 +155,6 @@ def _curriculum_stage_start_episode(stage_name):
             return max(0, previous_max_train_episode + 1)
         previous_max_train_episode = int(stage.get("max_train_episode", previous_max_train_episode))
     return None
-
-
-def _resolve_preload_model_file(preload_model_dir, preload_model_id):
-    if not preload_model_dir:
-        return None
-    model_file = os.path.join(str(preload_model_dir), f"model.ckpt-{str(preload_model_id)}.pkl")
-    return os.path.abspath(model_file)
-
-
-def _read_resume_checkpoint_state(config_path="conf/configure_app.toml"):
-    state = {
-        "enabled": False,
-        "preload_model": False,
-        "preload_model_dir": None,
-        "preload_model_id": None,
-        "model_file": None,
-    }
-
-    try:
-        with open(config_path, "rb") as file_obj:
-            app_conf = tomllib.load(file_obj).get("app", {})
-    except (OSError, tomllib.TOMLDecodeError):
-        return state
-
-    preload_model = bool(app_conf.get("preload_model", False))
-    preload_model_dir = app_conf.get("preload_model_dir")
-    preload_model_id = app_conf.get("preload_model_id")
-    model_file = _resolve_preload_model_file(preload_model_dir, preload_model_id)
-
-    state.update(
-        {
-            "preload_model": preload_model,
-            "preload_model_dir": preload_model_dir,
-            "preload_model_id": preload_model_id,
-            "model_file": model_file,
-            "enabled": bool(preload_model and model_file and os.path.isfile(model_file)),
-        }
-    )
-    return state
 
 
 @dataclass
@@ -528,12 +489,34 @@ class EpisodeRunner:
         self.train_episode_total = 0
         self.eval_episode_metrics = []
         self._last_progress_report_step = None
-        self.resume_checkpoint_state = _read_resume_checkpoint_state()
-        self._maybe_resume_curriculum_stage()
+        self.resume_checkpoint_state = read_configured_resume_checkpoint()
+        self._apply_resume_checkpoint_state()
+        self._sync_resume_progress_snapshot()
 
-    def _maybe_resume_curriculum_stage(self):
+    def _apply_resume_checkpoint_state(self):
+        if not self.resume_checkpoint_state.get("enabled", False):
+            return
+
+        metadata = self.resume_checkpoint_state.get("metadata") or {}
+        if metadata:
+            self.episode_cnt = _safe_int(metadata.get("episode_cnt"), 0)
+            self.completed_episode_count = _safe_int(metadata.get("completed_episode_count"), 0)
+            self.train_episode_total = _safe_int(metadata.get("train_episode_total"), 0)
+            self.train_episode_since_last_eval = _safe_int(
+                metadata.get("train_episode_since_last_eval"),
+                0,
+            )
+            if self.logger:
+                self.logger.info(
+                    f"[RESUME] restore episode progress from {self.resume_checkpoint_state.get('model_file')}: "
+                    f"episode_cnt={self.episode_cnt}, completed_episode_count={self.completed_episode_count}, "
+                    f"train_episode_total={self.train_episode_total}, "
+                    f"train_episode_since_last_eval={self.train_episode_since_last_eval}"
+                )
+            return
+
         resume_stage_name = getattr(Config, "RESUME_CURRICULUM_STAGE_NAME", None)
-        if not resume_stage_name or not self.resume_checkpoint_state.get("enabled", False):
+        if not resume_stage_name:
             return
 
         start_episode = _curriculum_stage_start_episode(resume_stage_name)
@@ -546,11 +529,24 @@ class EpisodeRunner:
 
         self.train_episode_total = start_episode
         if self.logger:
-            self.logger.info(
+            self.logger.warning(
                 f"[CURRICULUM] resume checkpoint detected at {self.resume_checkpoint_state.get('model_file')}, "
-                f"initialize train_episode_total={self.train_episode_total} so training starts from "
-                f"stage={resume_stage_name}"
+                f"but no episode metadata was found. Fallback train_episode_total={self.train_episode_total} "
+                f"so training starts from stage={resume_stage_name}"
             )
+
+    def _snapshot_resume_metadata(self):
+        return {
+            "episode_cnt": int(self.episode_cnt),
+            "completed_episode_count": int(self.completed_episode_count),
+            "train_episode_total": int(self.train_episode_total),
+            "train_episode_since_last_eval": int(self.train_episode_since_last_eval),
+        }
+
+    def _sync_resume_progress_snapshot(self):
+        metadata = write_resume_progress_snapshot(self._snapshot_resume_metadata())
+        if metadata and hasattr(self.agent, "set_resume_metadata"):
+            self.agent.set_resume_metadata(metadata)
 
     def _sample_from_range(self, bounds):
         low, high = int(bounds[0]), int(bounds[1])
@@ -620,6 +616,7 @@ class EpisodeRunner:
             if self.is_eval_mode and self.eval_episode_cnt >= self.eval_episodes:
                 self.is_eval_mode = False
                 self.train_episode_since_last_eval = 0
+                self._sync_resume_progress_snapshot()
                 self.logger.info(
                     f"[EVAL] Eval completed. Back to training on maps {_describe_maps(self.train_conf)}"
                 )
@@ -760,6 +757,7 @@ class EpisodeRunner:
                             )
                     else:
                         self.train_episode_since_last_eval += 1
+                        self._sync_resume_progress_snapshot()
                         if self.monitor:
                             self.monitor.put_data(
                                 {os.getpid(): _round_metric_dict(episode_metrics.as_train_monitor_dict())}
