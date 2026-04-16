@@ -131,7 +131,7 @@ train_test.py
 docker exec -it kaiwu-dev-kaiwudrl-1 bash
 
 # 2. 在容器内执行烟测
-cd /workspace/KaiWuDRL
+cd /data/projects/gorge_chase
 git status  # 确认代码已同步进容器
 python3 train_test.py
 ```
@@ -237,7 +237,7 @@ train_test.py
 docker exec -it kaiwu-dev-kaiwudrl-1 bash
 
 # 在容器内执行测试
-cd /workspace/KaiWuDRL
+cd /data/projects/gorge_chase
 python3 train_test.py
 ```
 
@@ -381,6 +381,7 @@ python3 train_test.py
 - 根据报错信息修改对应文件
 - 重新进入 Docker 容器执行测试：
   docker exec -it kaiwu-dev-kaiwudrl-1 bash
+  cd /data/projects/gorge_chase
   python3 train_test.py
 - 直到 smoke test 通过
 ```

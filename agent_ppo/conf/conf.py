@@ -125,6 +125,7 @@ class Config:
 
     # Monitor reporting / 监控上报
     EPISODE_PROGRESS_REPORT_INTERVAL = 50
+    EPISODE_PROGRESS_REPORT_EPISODE_INTERVAL = 10
 
     # Lightweight exploration bonus / 轻量探索奖励
     ENABLE_EXPLORE_BONUS = True

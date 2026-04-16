@@ -54,21 +54,18 @@ model_file_sync_per_minutes = 1
 # Learner每次推送模型参数文件，以及Actor每次获取模型参数文件的数量（上限：50）
 modelpool_max_save_model_count = 1
 
-# Whether to enable the framework preload model function. The repo runtime now also checks
-# preload_model_dir + preload_model_id directly: if the configured checkpoint file exists, training
-# resumes from that checkpoint; otherwise it falls back to training from scratch.
-# 是否启用框架侧预加载模型功能。当前仓库运行时还会直接检查 preload_model_dir + preload_model_id：
-# 若配置出的 ckpt 文件存在，则从该 ckpt 继续训练；若文件不存在，则自动回退为从头训练。
+# Whether to enable the framework preload model function.
+# Keep this disabled: repo-side resume now uses `preload_model_path` directly.
+# 项目运行时是否启用框架侧预加载模型能力。
+# 保持关闭：当前仓库侧续训已直接使用 `preload_model_path`，不再依赖框架旧入口。
 preload_model = false
 
-# The relative path of the checkpoint folder. Runtime resume logic will combine this directory
-# with preload_model_id into model.ckpt-{id}.pkl and only resume when that file actually exists.
-# ckpt 目录相对路径。运行时续训逻辑会将该目录与 preload_model_id 组合成
-# model.ckpt-{id}.pkl，且仅在该文件真实存在时才会续训。
-preload_model_dir = "agent_ppo/ckpt"
+# Direct checkpoint file path. Supports either a raw `.pkl` file or a KaiWu exported `.zip` file.
+# If this field is non-empty and the file exists, training resumes from that checkpoint.
+# If this field is empty or the file does not exist, training starts from scratch.
+# 直接配置 checkpoint 文件地址。支持原始 `.pkl` 文件，也支持 KaiWu 导出的 `.zip` 文件。
+# 当该字段非空且文件存在时，从该 ckpt 继续训练；若为空或文件不存在，则从头训练。
+preload_model_path = "ckpt/gorge_chase-ppo-11289-2026_04_15_00_09_54-15.0.1.zip"
 
-# The checkpoint identification ID (usually the training step count in the filename).
-# Runtime resume logic uses this ID together with preload_model_dir to locate the resume checkpoint.
-# 续训 checkpoint 的标识 ID（通常对应文件名中的训练步数）。
-# 运行时会将该 ID 与 preload_model_dir 组合起来定位续训 ckpt。
-preload_model_id = 9705
+
+

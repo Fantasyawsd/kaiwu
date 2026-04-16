@@ -515,6 +515,21 @@ class EpisodeRunner:
                 )
             return
 
+        manifest_metadata = self.resume_checkpoint_state.get("manifest_metadata") or {}
+        manifest_train_step = _safe_int(manifest_metadata.get("train_step"), 0)
+        if manifest_train_step > 0:
+            self.episode_cnt = manifest_train_step
+            self.completed_episode_count = manifest_train_step
+            self.train_episode_total = manifest_train_step
+            self.train_episode_since_last_eval = manifest_train_step % max(1, int(self.eval_every_n))
+            if self.logger:
+                self.logger.warning(
+                    f"[RESUME] checkpoint {self.resume_checkpoint_state.get('configured_source')} "
+                    f"does not contain exact episode metadata. Fallback to zip manifest train_step="
+                    f"{manifest_train_step} as pseudo progress."
+                )
+            return
+
         resume_stage_name = getattr(Config, "RESUME_CURRICULUM_STAGE_NAME", None)
         if not resume_stage_name:
             return
@@ -575,6 +590,12 @@ class EpisodeRunner:
 
     def _report_episode_progress(self, step, force=False):
         if not self.monitor:
+            return
+        episode_interval = max(
+            1,
+            int(getattr(Config, "EPISODE_PROGRESS_REPORT_EPISODE_INTERVAL", 1)),
+        )
+        if self.episode_cnt > 0 and self.episode_cnt % episode_interval != 0:
             return
         interval = max(1, int(getattr(Config, "EPISODE_PROGRESS_REPORT_INTERVAL", 50)))
         step = int(step)
