@@ -3,6 +3,38 @@
 腾讯开悟（KaiWuDRL）"峡谷追猎 / Gorge Chase"强化学习代码包。训练智能体控制鲁班七号，在 128×128 栅格地图中躲避怪物、收集宝箱，尽量存活到最大步数（1000 步）。
 
 ---
+
+## ckpt Resume
+
+Gorge Chase 当前推荐通过 `conf/configure_app.toml` 里的 `preload_model_path` 直接指定 checkpoint 文件地址，而不是继续使用 `preload_model_dir + preload_model_id`。
+
+推荐配置：
+
+```toml
+# 保持框架原生预训练加载关闭，避免继续走 preload_model_dir / preload_model_id 逻辑
+preload_model = false
+
+# 直接配置 checkpoint 文件地址，支持原始 .pkl，也支持 KaiWu 导出的 .zip
+preload_model_path = "ckpt/gorge_chase-ppo-11289-2026_04_15_00_09_54-15.0.1.zip"
+```
+
+行为说明：
+
+- 当 `preload_model_path` 非空且目标文件存在时，从该 ckpt 继续训练。
+- 当 `preload_model_path` 为空，或目标文件不存在时，自动回退为从头训练。
+- 如果 ckpt 内带有业务侧保存的 `resume_metadata`，则 `episode`、`curriculum`、`eval` 等进度会精确续接。
+- 如果使用 KaiWu 平台导出的 `.zip`，且压缩包内部只有权重、没有业务侧 `resume_metadata`，当前实现会读取同名 `.zip.json` 中的 `train_step`，按近似 episode 进度恢复训练节奏。
+
+文件链路：
+
+```text
+conf/configure_app.toml
+    -> app.preload_model_path
+    -> ckpt/gorge_chase-ppo-11289-2026_04_15_00_09_54-15.0.1.zip  # 或 .pkl
+    -> agent_ppo/resume_utils.py                                   # 解析 ckpt / .zip.json / resume_metadata
+    -> agent_ppo/agent.py                                          # 加载模型权重
+    -> agent_ppo/workflow/train_workflow.py                        # 恢复 episode / curriculum / eval 进度
+```
 ## 开发前置动作
 
 进入任何非微小算法开发前，必须先完成下面这组 Git 起手动作：
