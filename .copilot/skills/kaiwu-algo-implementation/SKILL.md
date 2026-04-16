@@ -120,15 +120,23 @@ train_test.py
 - `agent_diy/` 只作参考，不做正式落地
 - 若修改特征维度、动作维度、样本结构，必须联动检查 `conf.py`、`preprocessor.py`、`definition.py`、`model.py`、`algorithm.py`、`agent.py`
 
-### Step 4：做最小验证
+### Step 4：做最小验证（必须在 Docker 中执行）
+
+> **⚠️ 重要：测试必须在 Docker 容器内执行，本地环境缺少依赖，直接运行会失败**
 
 实现完成后，至少执行一次 smoke test：
 
 ```bash
-# 进入 Docker 容器执行烟测
+# 1. 进入 Docker 容器（必须在容器内执行测试）
 docker exec -it kaiwu-dev-kaiwudrl-1 bash
+
+# 2. 在容器内执行烟测
+cd /data/projects/gorge_chase
+git status  # 确认代码已同步进容器
 python3 train_test.py
 ```
+
+**注意**：`kaiwu-dev-kaiwudrl-1` 是容器名，若不同请用 `docker ps` 查看实际容器名。
 
 ### Step 5：更新 NOW.md
 
@@ -222,9 +230,14 @@ train_test.py
 -> agent_ppo/workflow/train_workflow.py
 ```
 
-最小验证命令：
+最小验证命令（⚠️ 必须在 Docker 容器内执行）：
 
 ```bash
+# 进入容器
+docker exec -it kaiwu-dev-kaiwudrl-1 bash
+
+# 在容器内执行测试
+cd /data/projects/gorge_chase
 python3 train_test.py
 ```
 
@@ -366,7 +379,10 @@ python3 train_test.py
 ```
 下一步：修复代码错误
 - 根据报错信息修改对应文件
-- 重新运行 `python train_test.py`
+- 重新进入 Docker 容器执行测试：
+  docker exec -it kaiwu-dev-kaiwudrl-1 bash
+  cd /data/projects/gorge_chase
+  python3 train_test.py
 - 直到 smoke test 通过
 ```
 

@@ -120,15 +120,23 @@ train_test.py
 - `agent_diy/` 只作参考，不做正式落地
 - 若修改特征维度、动作维度、样本结构，必须联动检查 `conf.py`、`preprocessor.py`、`definition.py`、`model.py`、`algorithm.py`、`agent.py`
 
-### Step 4：做最小验证
+### Step 4：做最小验证（必须在 Docker 中执行）
+
+> **⚠️ 重要：测试必须在 Docker 容器内执行，本地环境缺少依赖，直接运行会失败**
 
 实现完成后，至少执行一次 smoke test：
 
 ```bash
-# 进入 Docker 容器执行烟测
+# 1. 进入 Docker 容器（必须在容器内执行测试）
 docker exec -it kaiwu-dev-kaiwudrl-1 bash
+
+# 2. 在容器内执行烟测
+cd /data/projects/gorge_chase
+git status  # 确认代码已同步进容器
 python3 train_test.py
 ```
+
+**注意**：`kaiwu-dev-kaiwudrl-1` 是容器名，若不同请用 `docker ps` 查看实际容器名。
 
 ### Step 5：更新 NOW.md
 
@@ -140,33 +148,59 @@ python3 train_test.py
 - smoke test 结果
 - 尚未做的训练事项
 
-### Step 6：把 NOW.md 整理成算法文档初稿
+### Step 6：创建算法文档目录并生成初稿
 
 这是算法实现的最后一步，必须执行。
 
-要求：
+#### 步骤 6.1：预创建算法文档目录
 
-- 把 `DEV_MEMORY/NOW.md` 从过程性记录，整理成“算法文档初稿”结构
+提前创建训练结果存放目录，方便后续人工放入 HTML 文档：
+
+- 训练全部曲线 HTML 文档和测试 HTML 文档都统一放入 `html/`
+- HTML 文档文件名（去掉扩展名）默认视作上传到官网的模型全称
+
+```bash
+mkdir -p GLOBAL_DOCS/算法文档/<算法完整名>/html
+```
+
+#### 步骤 6.2：生成算法文档初稿
+
+在 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 生成初稿：
+
 - 内容参考 `GLOBAL_DOCS/算法文档/agent_ppo_20260409_1733/README.md`
-- 只保留实现层面的稳定信息
-- 先不要写真实训练结果、训练得分、训练结论
+- 把 `DEV_MEMORY/NOW.md` 从过程性记录整理成正式结构
+- 只保留实现层面的稳定信息（特征、模型、奖励、超参数等）
+- 明确标注「待训练补充项」
+- **不编造训练结果、训练得分、训练结论**
 - 训练相关内容留给后续“人工训练结果整理、官网评估”和“信息归档”阶段
 
-可以选择两种做法：
+#### 步骤 6.3：同步更新 NOW.md
 
-1. 直接把 `NOW.md` 改写成算法文档初稿格式
-2. 在 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md` 先生成初稿，同时创建 `html/` 目录，并在 `NOW.md` 保留简版指针和本轮状态；该目录后续用于存放训练监控 HTML 文档与官方评估结果 HTML 文档
+在 `NOW.md` 中：
+- 保留简版实现记录和本轮状态
+- 添加指针：`算法文档初稿位置：GLOBAL_DOCS/算法文档/<算法完整名>/README.md`
+- 添加指针：`HTML 文档目录：GLOBAL_DOCS/算法文档/<算法完整名>/html/`
 
-若未明确要求，优先采用第 1 种，即先把 `NOW.md` 整理成算法文档初稿。
+#### 算法文档目录结构
+
+```
+GLOBAL_DOCS/算法文档/<算法完整名>/
+├── README.md          # 算法文档初稿（训练结果部分留空/标注待补充）
+└── html/       # 训练完成后人工放入训练/测试 HTML 文档；
+                       # HTML 文档文件名（去掉扩展名）默认视作官网模型全称
+```
 
 ## 算法文档初稿模板
 
+生成到 `GLOBAL_DOCS/算法文档/<算法完整名>/README.md`：
+
 ```markdown
-# <算法完整名> 算法文档初稿
+# <算法完整名> 算法文档
 
 **文档版本**：<算法完整名>
 **记录日期**：<YYYY-MM-DD>
-**当前状态**：已实现 / smoke test 已通过 / 暂无正式训练结果
+**当前状态**：已实现；smoke test 通过；暂无正式训练得分
+**HTML 文档目录**：`GLOBAL_DOCS/算法文档/<算法完整名>/html/`（训练完成后人工放入）
 
 ---
 
@@ -196,9 +230,14 @@ train_test.py
 -> agent_ppo/workflow/train_workflow.py
 ```
 
-最小验证命令：
+最小验证命令（⚠️ 必须在 Docker 容器内执行）：
 
 ```bash
+# 进入容器
+docker exec -it kaiwu-dev-kaiwudrl-1 bash
+
+# 在容器内执行测试
+cd /data/projects/gorge_chase
 python3 train_test.py
 ```
 
@@ -315,10 +354,10 @@ python3 train_test.py
 - 正式训练任务 ID：
 - 正式训练得分：
 - 关键监控结论：
-- 官网评估模型命名：<算法完整名>_<训练步数>
-- 官网评估任务 ID（5次）：
-- 10 张开放地图得分：
-- 最终评估结果 HTML 文档：
+- `html/` 中的 HTML 文档文件名：
+- 由 HTML 文档文件名得到的官网模型全称：
+- 5 次官方评估 / 10 张开放地图结果（如有）：
+- 测试 HTML 文档：
 - 是否进入归档：
 ```
 
@@ -340,27 +379,48 @@ python3 train_test.py
 ```
 下一步：修复代码错误
 - 根据报错信息修改对应文件
-- 重新运行 `python train_test.py`
+- 重新进入 Docker 容器执行测试：
+  docker exec -it kaiwu-dev-kaiwudrl-1 bash
+  cd /data/projects/gorge_chase
+  python3 train_test.py
 - 直到 smoke test 通过
 ```
 
 ### 场景 2：Smoke test 通过，算法文档初稿已完成
 ```
 下一步：提交代码并准备训练
-1. 提交代码：`git add -A && git commit -m “feat(scope): 实现 xxx 算法”`
-   
+1. 确认目录结构已创建：
+   GLOBAL_DOCS/算法文档/<算法完整名>/
+   ├── README.md          # 算法文档初稿
+   └── html/       # 空目录，用于存放训练 HTML 文档
+
+2. 提交代码：
+   git add -A
+   git commit -m “feat(<scope>): <算法完整名>”
+   git push -u origin feature/<分支名>
+
    示例 commit message：
-   ```
-   feat(preprocessor): 添加宝箱距离奖励
-   
-   - 改动目的：优化奖励 shaping
-   - 涉及文件：agent_ppo/feature/preprocessor.py
-   - 接口变化：无
+   ─────────────────────────────────────────
+   feat(ppo): agent_ppo_20260410_hok_memory_map_v1
+
+   - 实现内容：接入 HOK 风格记忆地图、16 维动作空间、分层奖励
+   - 关键设计：CNN 地图编码、目标记忆器、闪现脱险奖励
+   - 涉及文件：agent_ppo/conf/conf.py, agent_ppo/feature/preprocessor.py, agent_ppo/model/model.py
    - 烟测状态：通过
-   ```
-2. 推送到远端：`git push -u origin feature/<分支名>`
+   - 训练状态：暂无正式训练得分
+   - 算法文档：GLOBAL_DOCS/算法文档/agent_ppo_20260410_hok_memory_map_v1/README.md
+   ─────────────────────────────────────────
+
 3. 在平台上启动正式训练
-4. 训练完成后人工导出训练监控 HTML 文档，按 `<算法完整名>_<训练步数>` 上传模型做 5 次官方评估，整理 10 张地图得分与最终结果 HTML 文档，再决定下一步
+
+4. 训练完成后人工操作：
+   - 查看官方训练监控并导出 HTML 文档 → 放入 html/
+   - 对开放 10 图做 5 次官方评估，并将测试 HTML 文档 → 放入 html/
+   - HTML 文档文件名（去掉扩展名）视作上传到官网的模型全称
+   - AI 后续只检测 html/ 中是否有 HTML 文档，不校验 HTML 文档真伪
+   - 如需补充结构化结果，再在 README.md 中补充训练得分或评估摘要
+
+5. HTML 文档和结果整理完毕后，执行 /kaiwu-memory-archive 完成归档
 ```
 
 ### 场景 3：算法文档初稿尚未完成
