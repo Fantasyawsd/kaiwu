@@ -387,9 +387,8 @@ BETA_END = 0.0005
 | `dump_model_freq` | `1` | 模型参数文件输出频率 |
 | `model_file_sync_per_minutes` | `1` | 模型同步频率 |
 | `modelpool_max_save_model_count` | `1` | 单次同步模型数 |
-| `preload_model` | `false` | 默认从头训练 |
-| `preload_model_dir` | `agent_ppo/ckpt` | 续训目录 |
-| `preload_model_id` | `9705` | 续训模型步数 ID |
+| `preload_model` | `false` | 保持关闭；仓库侧续训不再依赖框架旧入口 |
+| `preload_model_path` | `ckpt/gorge_chase-ppo-11289-2026_04_15_00_09_54-15.0.1.zip` | 直接 checkpoint 路径；文件存在时从该 ckpt 继续训练，否则从头开始 |
 
 ---
 
@@ -408,7 +407,7 @@ BETA_END = 0.0005
   - 每 `50` 个训练 episode 后，运行 `10` 个评估 episode
 - 课程学习：
   - `EpisodeRunner._build_train_episode_conf()` 会按 `Config.CURRICULUM_STAGES` 动态覆盖宝箱数、buff 数、双怪出现时间、怪物加速时间和 `max_step`
-  - 若检测到合法续训 checkpoint，则从 `RESUME_CURRICULUM_STAGE_NAME = hard_generalization` 对应的 episode 段继续
+  - 若 `conf/configure_app.toml` 中的 `preload_model_path` 指向有效 `.pkl` 或 KaiWu 导出的 `.zip` checkpoint，则训练从该 checkpoint 继续；若缺少精确 episode metadata，则从 `RESUME_CURRICULUM_STAGE_NAME = hard_generalization` 对应的 episode 段继续
 - episode 终局奖励：
   - `terminated=True`：`Config.TERMINATED_PENALTY = -8.0`
   - 存活到 `max_step`：`Config.TRUNCATED_BONUS = 4.0`
